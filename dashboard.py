@@ -151,7 +151,6 @@ def generate_kpi_data():
 kpi_data = generate_kpi_data()
 
 def create_kpi_metric(title, value, unit, change, icon="📊"):
-    """Create a clean KPI metric display using Streamlit native components"""
     higher_better = [
         "Revenue", "Revenue vs Target", "Gross Margin", "CSAT", "NPS", "SLA Achievement",
         "Retention Rate", "System Uptime", "Resolution Success", "Code Review Coverage",
@@ -162,7 +161,6 @@ def create_kpi_metric(title, value, unit, change, icon="📊"):
         "Attrition Rate", "Overtime per FTE"
     ]
 
-    # Format the value display
     if isinstance(value, float):
         if unit in ['M', 'K']:
             display_value = f"${value:.1f}{unit}"
@@ -179,7 +177,6 @@ def create_kpi_metric(title, value, unit, change, icon="📊"):
     else:
         display_value = f"{value}{unit}"
 
-    # Determine delta color based on KPI type
     if title in higher_better:
         if change > 0:
             delta_color = "normal"
@@ -199,7 +196,6 @@ def create_kpi_metric(title, value, unit, change, icon="📊"):
 
     change_str = f"{change:+}%"
 
-    # Use Streamlit's metric component
     st.metric(
         label=f"{icon} {title}",
         value=display_value,
@@ -208,80 +204,50 @@ def create_kpi_metric(title, value, unit, change, icon="📊"):
     )
 
 def create_subdivision_chart(kpi_name, subdivision_data, chart_type="bar"):
-    """Create charts for subdivision data"""
     subdivisions = list(subdivision_data.keys())
     values = list(subdivision_data.values())
     if chart_type == "bar":
-        fig = px.bar(
-            x=subdivisions,
-            y=values,
-            title=f"{kpi_name} by Subdivision",
-            color=values,
-            color_continuous_scale="Blues"
-        )
+        fig = px.bar(x=subdivisions, y=values, title=f"{kpi_name} by Subdivision", color=values, color_continuous_scale="Blues")
     elif chart_type == "pie":
-        fig = px.pie(
-            values=values,
-            names=subdivisions,
-            title=f"{kpi_name} Distribution by Subdivision"
-        )
-    else:  # line chart
-        fig = px.line(
-            x=subdivisions,
-            y=values,
-            title=f"{kpi_name} Trend by Subdivision",
-            markers=True
-        )
-    fig.update_layout(
-        height=400,
-        showlegend=True if chart_type == "pie" else False
-    )
+        fig = px.pie(values=values, names=subdivisions, title=f"{kpi_name} Distribution by Subdivision")
+    else:
+        fig = px.line(x=subdivisions, y=values, title=f"{kpi_name} Trend by Subdivision", markers=True)
+    fig.update_layout(height=400, showlegend=(chart_type == "pie"))
     return fig
 
 def create_radar_chart(bu, month):
-    """Create radar chart for performance overview"""
     data = kpi_data[bu][month]
-    # Extract key metrics for radar chart
     metrics = [
-        'Revenue Performance',
-        'Customer Satisfaction',
-        'Quality Score',
-        'Employee Engagement',
-        'Operational Efficiency',
-        'Cost Management'
+        'Revenue Performance', 'Customer Satisfaction', 'Quality Score',
+        'Employee Engagement', 'Operational Efficiency', 'Cost Management'
     ]
-    # Calculate normalized scores (0-100)
     scores = [
         min(100, data['Financial']['Revenue vs Target']['value']),
-        data['Customer & Service']['CSAT']['value'] * 20,  # Convert 4.5/5 to 90/100
+        data['Customer & Service']['CSAT']['value'] * 20,
         data['Quality Metrics']['System Uptime']['value'],
-        data['Employee Fulfillment']['Engagement Score']['value'] * 10,  # Convert 8.5/10 to 85/100
-        100 - data['Quality Metrics']['Defect Rate']['value'] * 10,  # Invert defect rate
-        100 - abs(data['Financial']['Cost per Project']['change'])  # Invert cost increase
+        data['Employee Fulfillment']['Engagement Score']['value'] * 10,
+        100 - data['Quality Metrics']['Defect Rate']['value'] * 10,
+        100 - abs(data['Financial']['Cost per Project']['change'])
     ]
     fig = go.Figure()
-    fig.add_trace(go.Scatterpolar(
-        r=scores,
-        theta=metrics,
-        fill='toself',
-        name=f'{bu} Performance',
-        line_color='#4472C4',
-        fillcolor='rgba(68, 114, 196, 0.3)'
-    ))
-    fig.update_layout(
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 100]
-            )),
-        showlegend=True,
-        title="Performance Overview",
-        height=350
-    )
+    fig.add_trace(go.Scatterpolar(r=scores, theta=metrics, fill='toself'))
+    fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), height=350, showlegend=False)
     return fig
 
 # Main app layout
 def main():
+    # CSS for gray boxes
+    st.markdown("""
+    <style>
+        .section-box {
+            background-color: #f0f2f6;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
     # Header with animated gradient
     st.markdown(f"""
     <div style="
@@ -309,7 +275,7 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
-    # Create layout with sidebar and main content
+    # Sidebar
     with st.sidebar:
         st.markdown("### Select Month")
         selected_month = st.selectbox(
@@ -323,79 +289,54 @@ def main():
             ['BU1', 'BU2', 'BU3'],
             index=['BU1', 'BU2', 'BU3'].index(st.session_state.selected_bu)
         )
-        # Update session state
         if selected_month != st.session_state.selected_month or selected_bu != st.session_state.selected_bu:
             st.session_state.selected_month = selected_month
             st.session_state.selected_bu = selected_bu
             st.rerun()
 
-    # Get current data
     current_data = kpi_data[st.session_state.selected_bu][st.session_state.selected_month]
 
-    # Main layout
     col_left, col_right = st.columns([2, 1])
+
     with col_left:
-       # --- Financial Section ---
-       st.markdown("### 📊 Financial")
-       fin_col1, fin_col2, fin_col3 = st.columns([1, 1, 1])
-        
+        # Financial Section
+        st.markdown('<div class="section-box">', unsafe_allow_html=True)
+        st.markdown("### 📊 Financial")
+        fin_col1, fin_col2, fin_col3 = st.columns([1, 1, 1])
         with fin_col1:
-            with st.container():
-                st.markdown(
-                    """
-                    <style>
-                        .kpi-box {
-                            padding: 15px;
-                            border-radius: 8px;
-                            background-color: #f0f2f6;
-                            margin-bottom: 10px;
-                        }
-                    </style>
-                    """,
-                    unsafe_allow_html=True
-                )
-                # Revenue vs Target
-                target_data = current_data['Financial']['Revenue vs Target']
-                st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
-                create_kpi_metric("Revenue vs Target", target_data['value'], "%", target_data['change'], "🎯")
-                with st.expander("🎯 Revenue vs Target Details", expanded=False):
-                    st.markdown("**Subdivision Breakdown**")
-                    tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
-                    with tab1:
-                        st.metric("PRODEV Target Achievement", "98%", "3%")
-                        fig = create_subdivision_chart("PRODEV Revenue vs Target", {"Jan": 95, "Feb": 97, "Mar": 96, "Apr": 98, "May": 99}, "line")
-                        st.plotly_chart(fig, use_container_width=True, key="chart_target_prodev")
-                    with tab2:
-                        st.metric("PD1 Target Achievement", "89%", "2%")
-                        fig = create_subdivision_chart("PD1 Revenue vs Target", {"Jan": 87, "Feb": 88, "Mar": 89, "Apr": 90, "May": 91}, "bar")
-                        st.plotly_chart(fig, use_container_width=True, key="chart_target_pd1")
-                    with tab3:
-                        st.metric("PD2 Target Achievement", "92%", "1%")
-                    with tab4:
-                        st.metric("DOCS Target Achievement", "95%", "4%")
-                st.markdown('</div>', unsafe_allow_html=True)
-        
-                # Cost per Project
-                cost_data = current_data['Financial']['Cost per Project']
-                st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
-                create_kpi_metric("Cost per Project", cost_data['value'], "K", cost_data['change'], "💸")
-                with st.expander("💸 Cost per Project Details", expanded=False):
-                    st.markdown("**Cost Breakdown by Subdivision**")
-                    tab1, tab2 = st.tabs(["PRODEV", "PD1"])
-                    with tab1:
-                        st.metric("PRODEV Cost", "$45K", "-5%")
-                        fig = create_subdivision_chart("PRODEV Cost Trend", {"Jan": 48, "Feb": 47, "Mar": 45, "Apr": 44, "May": 42}, "line")
-                        st.plotly_chart(fig, use_container_width=True, key="chart_cost_prodev")
-                    with tab2:
-                        st.metric("PD1 Cost", "$38K", "-2%")
-                        fig = create_subdivision_chart("PD1 Cost Trend", {"Jan": 40, "Feb": 39, "Mar": 38, "Apr": 37, "May": 36}, "bar")
-                        st.plotly_chart(fig, use_container_width=True, key="chart_cost_pd1")
-                st.markdown('</div>', unsafe_allow_html=True)
-        
+            target_data = current_data['Financial']['Revenue vs Target']
+            create_kpi_metric("Revenue vs Target", target_data['value'], "%", target_data['change'], "🎯")
+            with st.expander("💰 Revenue vs Target Details", expanded=False):
+                st.markdown("**Subdivision Breakdown**")
+                tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
+                with tab1:
+                    st.metric("PRODEV Target Achievement", "98%", "3%")
+                    fig = create_subdivision_chart("PRODEV Revenue vs Target", {"Jan": 95, "Feb": 97, "Mar": 96, "Apr": 98, "May": 99}, "line")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_target_prodev")
+                with tab2:
+                    st.metric("PD1 Target Achievement", "89%", "2%")
+                    fig = create_subdivision_chart("PD1 Revenue vs Target", {"Jan": 87, "Feb": 88, "Mar": 89, "Apr": 90, "May": 91}, "bar")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_target_pd1")
+                with tab3:
+                    st.metric("PD2 Target Achievement", "92%", "1%")
+                with tab4:
+                    st.metric("DOCS Target Achievement", "95%", "4%")
+
+            cost_data = current_data['Financial']['Cost per Project']
+            create_kpi_metric("Cost per Project", cost_data['value'], "K", cost_data['change'], "💸")
+            with st.expander("💸 Cost per Project Details", expanded=False):
+                st.markdown("**Cost Breakdown by Subdivision**")
+                tab1, tab2 = st.tabs(["PRODEV", "PD1"])
+                with tab1:
+                    st.metric("PRODEV Cost", "$45K", "-5%")
+                    fig = create_subdivision_chart("PRODEV Cost Trend", {"Jan": 48, "Feb": 47, "Mar": 45, "Apr": 44, "May": 42}, "line")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_cost_prodev")
+                with tab2:
+                    st.metric("PD1 Cost", "$38K", "-2%")
+                    fig = create_subdivision_chart("PD1 Cost Trend", {"Jan": 40, "Feb": 39, "Mar": 38, "Apr": 37, "May": 36}, "bar")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_cost_pd1")
         with fin_col2:
-            # Gross Margin
             margin_data = current_data['Financial']['Gross Margin']
-            st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
             create_kpi_metric("Gross Margin", margin_data['value'], "%", margin_data['change'], "📊")
             with st.expander("📊 Gross Margin Details", expanded=False):
                 st.markdown("**Margin Analysis by Subdivision**")
@@ -408,11 +349,8 @@ def main():
                     st.metric("PD1 Margin", "38%", "1%")
                     fig = create_subdivision_chart("PD1 Margin Trend", {"Jan": 37, "Feb": 37, "Mar": 38, "Apr": 38, "May": 39}, "bar")
                     st.plotly_chart(fig, use_container_width=True, key="chart_margin_pd1")
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-            # AR Days
+
             ar_data = current_data['Financial']['AR Days']
-            st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
             create_kpi_metric("AR Days", ar_data['value'], "days", ar_data['change'], "📅")
             with st.expander("📅 AR Days Details", expanded=False):
                 st.markdown("**AR Days by Subdivision**")
@@ -425,12 +363,8 @@ def main():
                     st.metric("PD1 AR Days", "35", "-1")
                     fig = create_subdivision_chart("PD1 AR Days", {"Jan": 36, "Feb": 36, "Mar": 35, "Apr": 35, "May": 34}, "bar")
                     st.plotly_chart(fig, use_container_width=True, key="chart_ar_pd1")
-            st.markdown('</div>', unsafe_allow_html=True)
-        
         with fin_col3:
-            # Revenue
             revenue_data = current_data['Financial']['Revenue']
-            st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
             create_kpi_metric("Revenue", revenue_data['value'], "M", revenue_data['change'], "💰")
             with st.expander("💰 Revenue Details", expanded=False):
                 st.markdown("**Revenue Breakdown by Subdivision**")
@@ -451,17 +385,14 @@ def main():
                     st.metric("ITS Revenue", f"${revenue_data['subdivisions']['ITS']}K", "6.2%")
                 with tab6:
                     st.metric("CHAPTER Revenue", f"${revenue_data['subdivisions']['CHAPTER']}K", "4.1%")
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-        
-        # --- Customer & Service Section ---
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Customer & Service Section
+        st.markdown('<div class="section-box">', unsafe_allow_html=True)
         st.markdown("### 👥 Customer & Service")
         cs_col1, cs_col2, cs_col3 = st.columns([1, 1, 1])
-        
         with cs_col1:
-            # NPS
             nps_data = current_data['Customer & Service']['NPS']
-            st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
             create_kpi_metric("NPS", nps_data['value'], "", nps_data['change'], "📈")
             with st.expander("📈 NPS Details", expanded=False):
                 st.markdown("**Net Promoter Score by Subdivision**")
@@ -478,11 +409,8 @@ def main():
                     st.metric("PD2 NPS", "45", "+2")
                 with tab4:
                     st.metric("DOCS NPS", "38", "+4")
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-            # Avg Response Time
+
             response_data = current_data['Customer & Service']['Avg Response Time']
-            st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
             create_kpi_metric("Avg Response Time", response_data['value'], "h", response_data['change'], "⏱️")
             with st.expander("⏱️ Avg Response Time Details", expanded=False):
                 st.markdown("**Average Response Time by Subdivision**")
@@ -499,17 +427,67 @@ def main():
                     st.metric("PD2 Avg Response", "3.0h", "-0.1h")
                 with tab4:
                     st.metric("DOCS Avg Response", "2.6h", "-0.3h")
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-        # (Tambahkan Quality Metrics dan Employee Fulfillment dengan format yang sama seperti di atas)
+        with cs_col2:
+            sla_data = current_data['Customer & Service']['SLA Achievement']
+            create_kpi_metric("SLA Achievement", sla_data['value'], "%", sla_data['change'], "🎯")
+            with st.expander("🎯 SLA Achievement Details", expanded=False):
+                st.markdown("**SLA Achievement by Subdivision**")
+                tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
+                with tab1:
+                    st.metric("PRODEV SLA", "95%", "+2%")
+                    fig = create_subdivision_chart("PRODEV SLA", {"Jan": 90, "Feb": 91, "Mar": 93, "Apr": 94, "May": 95}, "line")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_sla_prodev")
+                with tab2:
+                    st.metric("PD1 SLA", "92%", "+1%")
+                    fig = create_subdivision_chart("PD1 SLA", {"Jan": 91, "Feb": 91, "Mar": 92, "Apr": 92, "May": 93}, "bar")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_sla_pd1")
+                with tab3:
+                    st.metric("PD2 SLA", "90%", "+1%")
+                with tab4:
+                    st.metric("DOCS SLA", "93%", "+2%")
 
+            retention_data = current_data['Customer & Service']['Retention Rate']
+            create_kpi_metric("Retention Rate", retention_data['value'], "%", retention_data['change'], "🔒")
+            with st.expander("🔒 Retention Rate Details", expanded=False):
+                st.markdown("**Customer Retention by Subdivision**")
+                tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
+                with tab1:
+                    st.metric("PRODEV Retention", "94%", "+1%")
+                    fig = create_subdivision_chart("PRODEV Retention Rate", {"Jan": 92, "Feb": 93, "Mar": 93, "Apr": 94, "May": 95}, "line")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_retention_prodev")
+                with tab2:
+                    st.metric("PD1 Retention", "91%", "+1%")
+                    fig = create_subdivision_chart("PD1 Retention Rate", {"Jan": 90, "Feb": 90, "Mar": 91, "Apr": 91, "May": 92}, "bar")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_retention_pd1")
+                with tab3:
+                    st.metric("PD2 Retention", "90%", "+1%")
+                with tab4:
+                    st.metric("DOCS Retention", "92%", "+2%")
+        with cs_col3:
+            csat_data = current_data['Customer & Service']['CSAT']
+            create_kpi_metric("CSAT", csat_data['value'], "/5", csat_data['change'], "⭐")
+            with st.expander("⭐ CSAT Details", expanded=False):
+                st.markdown("**Customer Satisfaction by Subdivision**")
+                tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
+                with tab1:
+                    st.metric("PRODEV CSAT", f"{csat_data['subdivisions']['PRODEV']:.1f}/5", "0.2")
+                    fig = create_subdivision_chart("PRODEV CSAT", {"Jan": 4.1, "Feb": 4.3, "Mar": 4.2, "Apr": 4.4, "May": 4.5}, "line")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_csat_prodev")
+                with tab2:
+                    st.metric("PD1 CSAT", f"{csat_data['subdivisions']['PD1']:.1f}/5", "0.1")
+                    fig = create_subdivision_chart("PD1 CSAT", {"Jan": 3.9, "Feb": 4.0, "Mar": 4.1, "Apr": 4.2, "May": 4.3}, "bar")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_csat_pd1")
+                with tab3:
+                    st.metric("PD2 CSAT", f"{csat_data['subdivisions']['PD2']:.1f}/5", "0.3")
+                with tab4:
+                    st.metric("DOCS CSAT", f"{csat_data['subdivisions']['DOCS']:.1f}/5", "0.1")
+        st.markdown('</div>', unsafe_allow_html=True)
 
         # Quality Metrics Section
+        st.markdown('<div class="section-box">', unsafe_allow_html=True)
         st.markdown("### 🎯 Quality Metrics")
         qm_col1, qm_col2, qm_col3 = st.columns([2, 1, 1])
-
         with qm_col1:
-            # System Uptime
             uptime_data = current_data['Quality Metrics']['System Uptime']
             create_kpi_metric("System Uptime", uptime_data['value'], "%", uptime_data['change'], "⚡")
             with st.expander("⚡ System Uptime Details", expanded=False):
@@ -517,9 +495,7 @@ def main():
                 chart_type = st.selectbox("Chart Type", ["bar", "pie", "line"], key="uptime_chart")
                 fig = create_subdivision_chart("System Uptime", uptime_data['subdivisions'], chart_type)
                 st.plotly_chart(fig, use_container_width=True)
-
         with qm_col2:
-            # Defect Rate
             defect_data = current_data['Quality Metrics']['Defect Rate']
             create_kpi_metric("Defect Rate", defect_data['value'], "%", defect_data['change'], "🔍")
             with st.expander("🔍 Defect Rate Details", expanded=False):
@@ -538,7 +514,6 @@ def main():
                 with tab4:
                     st.metric("DOCS Defect Rate", "1.3%", "-0.2%")
 
-            # Rework Rate
             rework_data = current_data['Quality Metrics']['Rework Rate']
             create_kpi_metric("Rework Rate", rework_data['value'], "%", rework_data['change'], "🔄")
             with st.expander("🔄 Rework Rate Details", expanded=False):
@@ -556,9 +531,7 @@ def main():
                     st.metric("PD2 Rework Rate", "3.8%", "-0.1%")
                 with tab4:
                     st.metric("DOCS Rework Rate", "3.4%", "-0.2%")
-
         with qm_col3:
-            # Resolution Success
             resolution_data = current_data['Quality Metrics']['Resolution Success']
             create_kpi_metric("Resolution Success", resolution_data['value'], "%", resolution_data['change'], "✅")
             with st.expander("✅ Resolution Success Details", expanded=False):
@@ -577,7 +550,6 @@ def main():
                 with tab4:
                     st.metric("DOCS Resolution", "96%", "+2%")
 
-            # Code Review Coverage
             review_data = current_data['Quality Metrics']['Code Review Coverage']
             create_kpi_metric("Code Review Coverage", review_data['value'], "%", review_data['change'], "📝")
             with st.expander("📝 Code Review Coverage Details", expanded=False):
@@ -595,13 +567,13 @@ def main():
                     st.metric("PD2 Code Review", "89%", "+1%")
                 with tab4:
                     st.metric("DOCS Code Review", "91%", "+2%")
+        st.markdown('</div>', unsafe_allow_html=True)
 
         # Employee Fulfillment Section
+        st.markdown('<div class="section-box">', unsafe_allow_html=True)
         st.markdown("### 👨‍💼 Employee Fulfillment")
         ef_col1, ef_col2, ef_col3 = st.columns([2, 1, 1])
-
         with ef_col1:
-            # Engagement Score
             engagement_data = current_data['Employee Fulfillment']['Engagement Score']
             create_kpi_metric("Engagement Score", engagement_data['value'], "/10", engagement_data['change'], "👨‍💼")
             with st.expander("👨‍💼 Engagement Score Details", expanded=False):
@@ -609,9 +581,7 @@ def main():
                 chart_type = st.selectbox("Chart Type", ["bar", "pie", "line"], key="engagement_chart")
                 fig = create_subdivision_chart("Engagement Score", engagement_data['subdivisions'], chart_type)
                 st.plotly_chart(fig, use_container_width=True)
-
         with ef_col2:
-            # Attrition Rate
             attrition_data = current_data['Employee Fulfillment']['Attrition Rate']
             create_kpi_metric("Attrition Rate", attrition_data['value'], "%", attrition_data['change'], "📉")
             with st.expander("📉 Attrition Rate Details", expanded=False):
@@ -630,7 +600,6 @@ def main():
                 with tab4:
                     st.metric("DOCS Attrition", "7%", "-1%")
 
-            # Training Hours
             training_data = current_data['Employee Fulfillment']['Training Hours']
             create_kpi_metric("Training Hours/Emp", training_data['value'], "hrs", training_data['change'], "📚")
             with st.expander("📚 Training Hours Details", expanded=False):
@@ -648,9 +617,7 @@ def main():
                     st.metric("PD2 Training", "38 hrs", "+1 hrs")
                 with tab4:
                     st.metric("DOCS Training", "42 hrs", "+3 hrs")
-
         with ef_col3:
-            # Overtime per FTE
             overtime_data = current_data['Employee Fulfillment']['Overtime per FTE']
             create_kpi_metric("Overtime per FTE", overtime_data['value'], "h", overtime_data['change'], "⏰")
             with st.expander("⏰ Overtime per FTE Details", expanded=False):
@@ -669,7 +636,6 @@ def main():
                 with tab4:
                     st.metric("DOCS Overtime", "3.1h", "-0.2h")
 
-            # Internal Promotion Rate
             promotion_data = current_data['Employee Fulfillment']['Internal Promotion Rate']
             create_kpi_metric("Internal Promotion Rate", promotion_data['value'], "%", promotion_data['change'], "🎖️")
             with st.expander("🎖️ Internal Promotion Rate Details", expanded=False):
@@ -687,9 +653,9 @@ def main():
                     st.metric("PD2 Promotion", "9%", "+1%")
                 with tab4:
                     st.metric("DOCS Promotion", "11%", "+2%")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with col_right:
-        # Performance Overview
         st.markdown("### 📈 Performance Overview")
         fig_radar = create_radar_chart(st.session_state.selected_bu, st.session_state.selected_month)
         st.plotly_chart(fig_radar, use_container_width=True)
