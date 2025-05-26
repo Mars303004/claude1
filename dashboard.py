@@ -41,24 +41,20 @@ st.markdown("""
         gap: 0.5rem;
         height: calc(100% - 60px);
     }
-    .kpi-card {
-        background: rgba(255,255,255,0.15);
-        border-radius: 8px;
-        padding: 0.5rem;
-        text-align: center;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.2);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        min-height: 80px;
-        cursor: pointer;
+    .stButton>button {
+        width: 100%;
+        height: 100%;
+        background: rgba(255,255,255,0.15) !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        color: white !important;
+        padding: 0.5rem !important;
+        transition: all 0.3s ease !important;
     }
-    .kpi-card:hover {
+    .stButton>button:hover {
         transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        background: rgba(255,255,255,0.25);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
+        background: rgba(255,255,255,0.25) !important;
     }
     .kpi-title {
         font-size: 10px;
@@ -74,18 +70,11 @@ st.markdown("""
         font-size: 9px;
         margin-top: 0.1rem;
     }
-    .positive-change {
+    .positive {
         color: #00ff88 !important;
     }
-    .negative-change {
+    .negative {
         color: #ff6b6b !important;
-    }
-    button[kind="secondary"] {
-        width: 100% !important;
-        height: 100% !important;
-        padding: 0 !important;
-        border: none !important;
-        background: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -175,20 +164,13 @@ def generate_dummy_data():
 
 # KPI Card Component
 def create_kpi_card(title, value, change, unit="", kpi_id="", is_inverse=False):
-    change_class = "positive-change" if (change > 0 and not is_inverse) or (change < 0 and is_inverse) else "negative-change"
+    change_class = "positive" if (change > 0 and not is_inverse) or (change < 0 and is_inverse) else "negative"
     sign = "+" if change > 0 else ""
     
     return st.button(
-        f"""
-        <div class="kpi-card">
-            <div class="kpi-title">{title}</div>
-            <div class="kpi-value">{value}{unit}</div>
-            <div class="kpi-change {change_class}">{sign}{change:.1f}% vs LY</div>
-        </div>
-        """,
+        f"**{title}**  \n{value}{unit}  \n`{sign}{change:.1f}%` vs LY",
         key=f"btn_{kpi_id}",
         on_click=lambda: st.session_state.update(selected_kpi=kpi_id),
-        unsafe_allow_html=True
     )
 
 def create_perspective_box(title, icon, *kpi_cards):
@@ -196,7 +178,7 @@ def create_perspective_box(title, icon, *kpi_cards):
     <div class="perspective-box">
         <div class="perspective-title">{icon} {title}</div>
         <div class="kpi-grid">
-            {"".join(kpi_cards)}
+            {"".join([f'<div class="kpi-item">{card}</div>' for card in kpi_cards])}
         </div>
     </div>
     """
@@ -263,17 +245,17 @@ col1, col2 = st.columns(2)
 
 with col1:
     # Financial Perspective
-    financial_box = create_perspective_box(
-        "Financial", "💰",
-        create_kpi_card("Revenue", "$1.5", 8.5, "M", "revenue"),
-        create_kpi_card("Target", "98%", 2.3, "", "revenue_target"),
-        create_kpi_card("Margin", "32%", 1.2, "", "gross_margin"),
-        create_kpi_card("Cost", "$450K", -1.5, "", "cost_project", True),
-        create_kpi_card("AR Days", "35", -2.1, "", "ar_days", True)
-    )
-    st.markdown(financial_box, unsafe_allow_html=True)
-    
-    # Quality Perspective
+    with st.container():
+        st.markdown(create_perspective_box(
+            "Financial", "💰",
+            create_kpi_card("Revenue", "$1.5", 8.5, "M", "revenue"),
+            create_kpi_card("Target", "98%", 2.3, "", "revenue_target"),
+            create_kpi_card("Margin", "32%", 1.2, "", "gross_margin"),
+            create_kpi_card("Cost", "$450K", -1.5, "", "cost_project", True),
+            create_kpi_card("AR Days", "35", -2.1, "", "ar_days", True)
+        ), unsafe_allow_html=True)
+
+# Quality Perspective
     quality_box = create_perspective_box(
         "Quality", "🛠️",
         create_kpi_card("Defect", "1.2%", -0.8, "", "defect_rate", True),
