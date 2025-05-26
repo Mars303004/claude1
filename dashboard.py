@@ -21,71 +21,50 @@ st.markdown("""
     .main > div {
         padding-top: 1rem;
     }
-    .perspective-box {
+    .kpi-button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 15px;
-        padding: 1rem;
-        margin: 0.5rem;
+        border: none;
+        border-radius: 10px;
         color: white;
-        min-height: 280px;
-        overflow: visible;
-        transition: all 0.3s ease;
-    }
-    .perspective-box.expanded {
-        min-height: 600px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%, #445587 100%);
-    }
-    .perspective-title {
-        font-size: 18px;
-        font-weight: bold;
-        margin-bottom: 0.8rem;
-        text-align: center;
-        border-bottom: 2px solid rgba(255,255,255,0.3);
-        padding-bottom: 0.5rem;
-    }
-    .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-    }
-    .kpi-card {
-        background: rgba(255,255,255,0.15);
-        border-radius: 8px;
-        padding: 0.5rem;
-        text-align: center;
+        padding: 15px;
+        margin: 5px;
         cursor: pointer;
         transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.2);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+        font-size: 12px;
+        text-align: center;
         min-height: 80px;
+        width: 100%;
     }
-    .kpi-card:hover {
+    .kpi-button:hover {
         transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        background: rgba(255,255,255,0.25);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
     }
-    .kpi-card.selected {
-        background: rgba(255,255,255,0.3);
-        border: 2px solid rgba(255,255,255,0.8);
-        transform: scale(1.05);
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 0.5rem 0;
+        color: white;
+        text-align: center;
+        transition: all 0.3s ease;
     }
-    .kpi-title {
-        font-size: 10px;
-        opacity: 0.9;
-        margin-bottom: 0.2rem;
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
     }
-    .kpi-value {
-        font-size: 16px;
+    .metric-value {
+        font-size: 24px;
         font-weight: bold;
-        margin: 0.1rem 0;
+        margin: 0.5rem 0;
     }
-    .kpi-change {
-        font-size: 9px;
-        margin-top: 0.1rem;
+    .metric-title {
+        font-size: 14px;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+    }
+    .metric-change {
+        font-size: 12px;
+        margin-top: 0.5rem;
     }
     .positive-change {
         color: #00ff88 !important;
@@ -93,14 +72,13 @@ st.markdown("""
     .negative-change {
         color: #ff6b6b !important;
     }
-    .kpi-details {
-        background: rgba(255,255,255,0.1);
-        border-radius: 12px;
-        padding: 1rem;
-        margin-top: 1rem;
-        backdrop-filter: blur(15px);
-        border: 1px solid rgba(255,255,255,0.2);
-        animation: slideDown 0.3s ease-out;
+    .analysis-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin: 1rem 0;
+        color: white;
+        animation: slideDown 0.4s ease-out;
     }
     @keyframes slideDown {
         from {
@@ -112,49 +90,20 @@ st.markdown("""
             transform: translateY(0);
         }
     }
-    .subdivision-tabs {
-        display: flex;
-        gap: 0.5rem;
+    .subdivision-selector {
         margin: 1rem 0;
-        flex-wrap: wrap;
     }
-    .subdivision-tab {
-        padding: 0.4rem 0.8rem;
+    .close-button {
         background: rgba(255,255,255,0.2);
-        border-radius: 15px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        font-size: 11px;
-        color: white;
         border: 1px solid rgba(255,255,255,0.3);
-    }
-    .subdivision-tab.active {
-        background: rgba(255,255,255,0.4);
-        border: 1px solid rgba(255,255,255,0.6);
-        font-weight: bold;
-    }
-    .subdivision-tab:hover {
-        background: rgba(255,255,255,0.3);
-    }
-    .close-details {
-        position: absolute;
-        top: 10px;
-        right: 15px;
-        background: rgba(255,255,255,0.2);
-        border: none;
         color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
         cursor: pointer;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        transition: all 0.3s ease;
+        margin-top: 1rem;
     }
-    .close-details:hover {
-        background: rgba(255,255,255,0.4);
+    .close-button:hover {
+        background: rgba(255,255,255,0.3);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -162,8 +111,6 @@ st.markdown("""
 # Initialize session state for KPI expansion
 if 'expanded_kpi' not in st.session_state:
     st.session_state.expanded_kpi = {}
-if 'selected_subdivision' not in st.session_state:
-    st.session_state.selected_subdivision = {}
 
 # Data Generation Functions
 @st.cache_data
@@ -247,20 +194,6 @@ def generate_dummy_data():
     data['employee'] = pd.DataFrame(employee_data)
     
     return data
-
-def create_kpi_card_html(title, value, change, unit="", kpi_id="", is_inverse=False, is_selected=False):
-    """Create HTML for KPI card with click handler"""
-    change_class = "positive-change" if (change > 0 and not is_inverse) or (change < 0 and is_inverse) else "negative-change"
-    sign = "+" if change > 0 else ""
-    selected_class = "selected" if is_selected else ""
-    
-    return f"""
-    <div class="kpi-card {selected_class}" data-kpi="{kpi_id}">
-        <div class="kpi-title">{title}</div>
-        <div class="kpi-value">{value}{unit}</div>
-        <div class="kpi-change {change_class}">{sign}{change:.1f}% vs LY</div>
-    </div>
-    """
 
 def create_chart_for_kpi(kpi_name, subdivision, data_dict, selected_bu, selected_month):
     """Create appropriate chart for selected KPI and subdivision"""
@@ -364,6 +297,44 @@ def create_chart_for_kpi(kpi_name, subdivision, data_dict, selected_bu, selected
         )
         return fig
         
+    elif kpi_name in ["Gross Margin", "SLA Achievement", "Retention Rate", "Resolution Success", "Engagement Score", "Training Hours/Emp"]:
+        # For different KPIs, get the right data source and column
+        if kpi_name == "Gross Margin":
+            monthly_data = data_dict['financial'][(data_dict['financial']['BU'] == selected_bu) & 
+                                                (data_dict['financial']['Subdivision'] == subdivision)]
+            column = 'Gross_Margin'
+        elif kpi_name == "SLA Achievement":
+            monthly_data = data_dict['customer'][(data_dict['customer']['BU'] == selected_bu) & 
+                                               (data_dict['customer']['Subdivision'] == subdivision)]
+            column = 'SLA_Achievement'
+        elif kpi_name == "Retention Rate":
+            monthly_data = data_dict['customer'][(data_dict['customer']['BU'] == selected_bu) & 
+                                               (data_dict['customer']['Subdivision'] == subdivision)]
+            column = 'Retention_Rate'
+        elif kpi_name == "Resolution Success":
+            monthly_data = data_dict['quality'][(data_dict['quality']['BU'] == selected_bu) & 
+                                              (data_dict['quality']['Subdivision'] == subdivision)]
+            column = 'Resolution_Success'
+        elif kpi_name == "Engagement Score":
+            monthly_data = data_dict['employee'][(data_dict['employee']['BU'] == selected_bu) & 
+                                               (data_dict['employee']['Subdivision'] == subdivision)]
+            column = 'Engagement_Score'
+        elif kpi_name == "Training Hours/Emp":
+            monthly_data = data_dict['employee'][(data_dict['employee']['BU'] == selected_bu) & 
+                                               (data_dict['employee']['Subdivision'] == subdivision)]
+            column = 'Training_Hours'
+        
+        fig = px.line(monthly_data, x='Month', y=column,
+                     title=f'{kpi_name} Trend - {subdivision}', 
+                     markers=True, height=300)
+        fig.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font_color='white',
+            title_font_size=14
+        )
+        return fig
+        
     else:
         # Default chart for other KPIs
         fig = go.Figure()
@@ -377,34 +348,6 @@ def create_chart_for_kpi(kpi_name, subdivision, data_dict, selected_bu, selected
             font_color='white'
         )
         return fig
-
-def create_kpi_details_section(kpi_name, subdivisions, data_dict, selected_bu, selected_month, perspective_key):
-    """Create the details section for expanded KPI"""
-    
-    # Get or set default subdivision
-    subdivision_key = f"{perspective_key}_{kpi_name}"
-    if subdivision_key not in st.session_state.selected_subdivision:
-        st.session_state.selected_subdivision[subdivision_key] = subdivisions[0]
-    
-    details_html = f"""
-    <div class="kpi-details">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h4 style="margin: 0; color: white;">📊 {kpi_name} Analysis</h4>
-        </div>
-    """
-    
-    # Add subdivision tabs if more than one
-    if len(subdivisions) > 1:
-        tabs_html = '<div class="subdivision-tabs">'
-        for subdiv in subdivisions:
-            active_class = "active" if subdiv == st.session_state.selected_subdivision[subdivision_key] else ""
-            tabs_html += f'<div class="subdivision-tab {active_class}" data-subdivision="{subdiv}">{subdiv}</div>'
-        tabs_html += '</div>'
-        details_html += tabs_html
-    
-    details_html += '<div id="chart-container"></div></div>'
-    
-    return details_html
 
 # Load data
 data = generate_dummy_data()
@@ -437,8 +380,9 @@ with st.sidebar:
         st.info("Advanced Dashboard would open here!")
 
 # Main Header
-st.markdown(f"# 📊 {selected_bu} Performance")
+st.markdown(f"# 📊 {selected_bu} Performance Dashboard")
 st.markdown(f"**Selected Period:** {selected_month}")
+st.markdown("---")
 
 # Filter data for selected BU and month
 financial_filtered = data['financial'][(data['financial']['BU'] == selected_bu) & 
@@ -452,7 +396,8 @@ employee_filtered = data['employee'][(data['employee']['BU'] == selected_bu) &
 
 # Calculate aggregated values
 total_revenue = financial_filtered['Revenue'].sum()
-revenue_vs_target = ((total_revenue / financial_filtered['Target'].sum()) - 1) * 100 if not financial_filtered.empty else 0
+total_target = financial_filtered['Target'].sum()
+revenue_vs_target = ((total_revenue / total_target) - 1) * 100 if total_target > 0 else 0
 avg_gross_margin = financial_filtered['Gross_Margin'].mean() if not financial_filtered.empty else 0
 avg_cost_per_project = financial_filtered['Cost_per_Project'].mean() if not financial_filtered.empty else 0
 avg_ar_days = financial_filtered['AR_Days'].mean() if not financial_filtered.empty else 0
@@ -508,226 +453,338 @@ col1, col2 = st.columns(2)
 
 with col1:
     # Financial perspective
-    st.markdown("### 💰 Financial")
+    st.markdown("### 💰 Financial Performance")
     
-    # Create buttons for financial KPIs
-    fin_cols = st.columns(5)
-    financial_kpis = ['revenue', 'revenue_target', 'gross_margin', 'cost_project', 'ar_days']
-    financial_values = [f"${total_revenue/1000:.1f}M", f"{revenue_vs_target:.0f}%", f"{avg_gross_margin:.0f}%", f"${avg_cost_per_project:.0f}K", f"{avg_ar_days:.0f}"]
-    financial_changes = [12.5, -3.0, 3.2, 5.1, -3.0]
+    # Financial KPI metrics
+    fin_col1, fin_col2, fin_col3 = st.columns(3)
     
-    for i, (kpi_id, value, change) in enumerate(zip(financial_kpis, financial_values, financial_changes)):
-        with fin_cols[i]:
-            kpi_name, subdivisions = kpi_mappings['financial'][kpi_id]
-            if st.button(f"{kpi_name}\n{value}", key=f"fin_{kpi_id}", help=f"Click to analyze {kpi_name}"):
-                # Toggle expansion
-                if st.session_state.expanded_kpi.get('financial') == kpi_id:
-                    st.session_state.expanded_kpi['financial'] = None
-                else:
-                    st.session_state.expanded_kpi['financial'] = kpi_id
-                st.rerun()
-    
-    # Show details if expanded
-    if st.session_state.expanded_kpi.get('customer'):
-        expanded_kpi = st.session_state.expanded_kpi['customer']
-        kpi_name, subdivisions = kpi_mappings['customer'][expanded_kpi]
-        
-        st.markdown("---")
-        st.markdown(f"#### 📊 {kpi_name} Analysis")
-        
-        # Subdivision selector
-        if len(subdivisions) > 1:
-            selected_subdivision = st.selectbox(
-                "Select Subdivision:",
-                subdivisions,
-                key=f"cust_subdiv_{expanded_kpi}"
-            )
-        else:
-            selected_subdivision = subdivisions[0]
-            st.info(f"Subdivision: {selected_subdivision}")
-        
-        # Create and display chart
-        try:
-            chart = create_chart_for_kpi(kpi_name, selected_subdivision, data, selected_bu, selected_month)
-            st.plotly_chart(chart, use_container_width=True, key=f"cust_chart_{expanded_kpi}")
-        except Exception as e:
-            st.error(f"Error creating chart: {str(e)}")
-        
-        if st.button("❌ Close", key=f"close_cust_{expanded_kpi}"):
-            st.session_state.expanded_kpi['customer'] = None
+    with fin_col1:
+        if st.button(f"Revenue\n${total_revenue/1000:.1f}M", key="fin_revenue", help="Click to analyze Revenue"):
+            if st.session_state.expanded_kpi.get('financial') == 'revenue':
+                st.session_state.expanded_kpi['financial'] = None
+            else:
+                st.session_state.expanded_kpi['financial'] = 'revenue'
             st.rerun()
     
-    st.markdown("---")
-    
-    # Employee perspective
-    st.markdown("### 👔 Employee Fulfillment")
-    
-    # Create buttons for employee KPIs
-    emp_cols = st.columns(4)
-    employee_kpis = ['engagement', 'attrition', 'training', 'overtime']
-    employee_values = [f"{avg_engagement:.1f}/10", f"{avg_attrition:.1f}%", f"{avg_training:.0f}", f"{avg_overtime:.1f}h"]
-    employee_changes = [0.4, -1.1, 5.0, 0.5]
-    
-    for i, (kpi_id, value, change) in enumerate(zip(employee_kpis, employee_values, employee_changes)):
-        with emp_cols[i]:
-            kpi_name, subdivisions = kpi_mappings['employee'][kpi_id]
-            if st.button(f"{kpi_name}\n{value}", key=f"emp_{kpi_id}", help=f"Click to analyze {kpi_name}"):
-                # Toggle expansion
-                if st.session_state.expanded_kpi.get('employee') == kpi_id:
-                    st.session_state.expanded_kpi['employee'] = None
-                else:
-                    st.session_state.expanded_kpi['employee'] = kpi_id
-                st.rerun()
-    
-    # Show details if expanded
-    if st.session_state.expanded_kpi.get('employee'):
-        expanded_kpi = st.session_state.expanded_kpi['employee']
-        kpi_name, subdivisions = kpi_mappings['employee'][expanded_kpi]
-        
-        st.markdown("---")
-        st.markdown(f"#### 📊 {kpi_name} Analysis")
-        
-        # Subdivision selector
-        if len(subdivisions) > 1:
-            selected_subdivision = st.selectbox(
-                "Select Subdivision:",
-                subdivisions,
-                key=f"emp_subdiv_{expanded_kpi}"
-            )
-        else:
-            selected_subdivision = subdivisions[0]
-            st.info(f"Subdivision: {selected_subdivision}")
-        
-        # Create and display chart
-        try:
-            chart = create_chart_for_kpi(kpi_name, selected_subdivision, data, selected_bu, selected_month)
-            st.plotly_chart(chart, use_container_width=True, key=f"emp_chart_{expanded_kpi}")
-        except Exception as e:
-            st.error(f"Error creating chart: {str(e)}")
-        
-        if st.button("❌ Close", key=f"close_emp_{expanded_kpi}"):
-            st.session_state.expanded_kpi['employee'] = None
+    with fin_col2:
+        if st.button(f"Rev vs Target\n{revenue_vs_target:.1f}%", key="fin_target", help="Click to analyze Revenue vs Target"):
+            if st.session_state.expanded_kpi.get('financial') == 'revenue_target':
+                st.session_state.expanded_kpi['financial'] = None
+            else:
+                st.session_state.expanded_kpi['financial'] = 'revenue_target'
             st.rerun()
-
-# Clear all expansions button
-st.markdown("---")
-col_clear1, col_clear2, col_clear3 = st.columns([1, 1, 1])
-with col_clear2:
-    if st.button("🔄 Clear All Expansions", type="secondary", help="Close all expanded KPI details"):
-        st.session_state.expanded_kpi = {}
-        st.rerun()
-
-# Footer
-st.markdown("---")
-st.markdown(
-    """
-    <div style='text-align: center; color: #666; font-size: 12px;'>
-    📊 IT Company Performance Dashboard | Last Updated: Real-time | 
-    <span style='color: #00C851;'>●</span> System Status: Online
-    </div>
-    """, 
-    unsafe_allow_html=True
-)()
     
-    # Show details if expanded
+    with fin_col3:
+        if st.button(f"Gross Margin\n{avg_gross_margin:.1f}%", key="fin_margin", help="Click to analyze Gross Margin"):
+            if st.session_state.expanded_kpi.get('financial') == 'gross_margin':
+                st.session_state.expanded_kpi['financial'] = None
+            else:
+                st.session_state.expanded_kpi['financial'] = 'gross_margin'
+            st.rerun()
+    
+    fin_col4, fin_col5 = st.columns(2)
+    
+    with fin_col4:
+        if st.button(f"Cost/Project\n${avg_cost_per_project:.0f}K", key="fin_cost", help="Click to analyze Cost per Project"):
+            if st.session_state.expanded_kpi.get('financial') == 'cost_project':
+                st.session_state.expanded_kpi['financial'] = None
+            else:
+                st.session_state.expanded_kpi['financial'] = 'cost_project'
+            st.rerun()
+    
+    with fin_col5:
+        if st.button(f"AR Days\n{avg_ar_days:.0f}", key="fin_ar", help="Click to analyze AR Days"):
+            if st.session_state.expanded_kpi.get('financial') == 'ar_days':
+                st.session_state.expanded_kpi['financial'] = None
+            else:
+                st.session_state.expanded_kpi['financial'] = 'ar_days'
+            st.rerun()
+    
+    # Show expanded analysis for Financial
     if st.session_state.expanded_kpi.get('financial'):
         expanded_kpi = st.session_state.expanded_kpi['financial']
         kpi_name, subdivisions = kpi_mappings['financial'][expanded_kpi]
         
-        st.markdown("---")
-        st.markdown(f"#### 📊 {kpi_name} Analysis")
-        
-        # Subdivision selector
-        if len(subdivisions) > 1:
-            selected_subdivision = st.selectbox(
-                "Select Subdivision:",
-                subdivisions,
-                key=f"fin_subdiv_{expanded_kpi}"
-            )
-        else:
-            selected_subdivision = subdivisions[0]
-            st.info(f"Subdivision: {selected_subdivision}")
-        
-        # Create and display chart
-        try:
-            chart = create_chart_for_kpi(kpi_name, selected_subdivision, data, selected_bu, selected_month)
-            st.plotly_chart(chart, use_container_width=True, key=f"fin_chart_{expanded_kpi}")
-        except Exception as e:
-            st.error(f"Error creating chart: {str(e)}")
-        
-        if st.button("❌ Close", key=f"close_fin_{expanded_kpi}"):
-            st.session_state.expanded_kpi['financial'] = None
-            st.rerun()
+        with st.container():
+            st.markdown(f"""
+                <div class="analysis-container">
+                    <h4>📊 {kpi_name} Analysis</h4>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Subdivision selector
+            if len(subdivisions) > 1:
+                selected_subdivision = st.selectbox(
+                    "Select Subdivision:",
+                    subdivisions,
+                    key=f"fin_subdiv_{expanded_kpi}"
+                )
+            else:
+                selected_subdivision = subdivisions[0]
+                st.info(f"Subdivision: {selected_subdivision}")
+            
+            # Create and display chart
+            try:
+                chart = create_chart_for_kpi(kpi_name, selected_subdivision, data, selected_bu, selected_month)
+                st.plotly_chart(chart, use_container_width=True, key=f"fin_chart_{expanded_kpi}")
+            except Exception as e:
+                st.error(f"Error creating chart: {str(e)}")
+            
+            if st.button("❌ Close Analysis", key=f"close_fin_{expanded_kpi}"):
+                st.session_state.expanded_kpi['financial'] = None
+                st.rerun()
     
     st.markdown("---")
     
-    # Quality perspective
-    st.markdown("### 🛠️ Quality Metrics")
+    # Employee perspective
+    st.markdown("### 👔 Employee & Learning")
     
-    # Create buttons for quality KPIs
-    qual_cols = st.columns(4)
-    quality_kpis = ['defect_rate', 'uptime', 'rework_rate', 'resolution']
-    quality_values = [f"{avg_defect_rate:.1f}%", f"{avg_uptime:.2f}%", f"{avg_rework:.1f}%", f"{avg_resolution:.1f}%"]
-    quality_changes = [-0.3, 0.1, -0.5, 1.2]
+    emp_col1, emp_col2 = st.columns(2)
     
-    for i, (kpi_id, value, change) in enumerate(zip(quality_kpis, quality_values, quality_changes)):
-        with qual_cols[i]:
-            kpi_name, subdivisions = kpi_mappings['quality'][kpi_id]
-            if st.button(f"{kpi_name}\n{value}", key=f"qual_{kpi_id}", help=f"Click to analyze {kpi_name}"):
-                # Toggle expansion
-                if st.session_state.expanded_kpi.get('quality') == kpi_id:
-                    st.session_state.expanded_kpi['quality'] = None
-                else:
-                    st.session_state.expanded_kpi['quality'] = kpi_id
-                st.rerun()
-    
-    # Show details if expanded
-    if st.session_state.expanded_kpi.get('quality'):
-        expanded_kpi = st.session_state.expanded_kpi['quality']
-        kpi_name, subdivisions = kpi_mappings['quality'][expanded_kpi]
-        
-        st.markdown("---")
-        st.markdown(f"#### 📊 {kpi_name} Analysis")
-        
-        # Subdivision selector
-        if len(subdivisions) > 1:
-            selected_subdivision = st.selectbox(
-                "Select Subdivision:",
-                subdivisions,
-                key=f"qual_subdiv_{expanded_kpi}"
-            )
-        else:
-            selected_subdivision = subdivisions[0]
-            st.info(f"Subdivision: {selected_subdivision}")
-        
-        # Create and display chart
-        try:
-            chart = create_chart_for_kpi(kpi_name, selected_subdivision, data, selected_bu, selected_month)
-            st.plotly_chart(chart, use_container_width=True, key=f"qual_chart_{expanded_kpi}")
-        except Exception as e:
-            st.error(f"Error creating chart: {str(e)}")
-        
-        if st.button("❌ Close", key=f"close_qual_{expanded_kpi}"):
-            st.session_state.expanded_kpi['quality'] = None
+    with emp_col1:
+        if st.button(f"Engagement\n{avg_engagement:.1f}/10", key="emp_engagement", help="Click to analyze Engagement Score"):
+            if st.session_state.expanded_kpi.get('employee') == 'engagement':
+                st.session_state.expanded_kpi['employee'] = None
+            else:
+                st.session_state.expanded_kpi['employee'] = 'engagement'
             st.rerun()
+        
+        if st.button(f"Training Hrs\n{avg_training:.0f}", key="emp_training", help="Click to analyze Training Hours"):
+            if st.session_state.expanded_kpi.get('employee') == 'training':
+                st.session_state.expanded_kpi['employee'] = None
+            else:
+                st.session_state.expanded_kpi['employee'] = 'training'
+            st.rerun()
+    
+    with emp_col2:
+        if st.button(f"Attrition\n{avg_attrition:.1f}%", key="emp_attrition", help="Click to analyze Attrition Rate"):
+            if st.session_state.expanded_kpi.get('employee') == 'attrition':
+                st.session_state.expanded_kpi['employee'] = None
+            else:
+                st.session_state.expanded_kpi['employee'] = 'attrition'
+            st.rerun()
+        
+        if st.button(f"Overtime\n{avg_overtime:.1f}h", key="emp_overtime", help="Click to analyze Overtime per FTE"):
+            if st.session_state.expanded_kpi.get('employee') == 'overtime':
+                st.session_state.expanded_kpi['employee'] = None
+            else:
+                st.session_state.expanded_kpi['employee'] = 'overtime'
+            st.rerun()
+    
+    # Show expanded analysis for Employee
+    if st.session_state.expanded_kpi.get('employee'):
+        expanded_kpi = st.session_state.expanded_kpi['employee']
+        kpi_name, subdivisions = kpi_mappings['employee'][expanded_kpi]
+        
+        with st.container():
+            st.markdown(f"""
+                <div class="analysis-container">
+                    <h4>📊 {kpi_name} Analysis</h4>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Subdivision selector
+            if len(subdivisions) > 1:
+                selected_subdivision = st.selectbox(
+                    "Select Subdivision:",
+                    subdivisions,
+                    key=f"emp_subdiv_{expanded_kpi}"
+                )
+            else:
+                selected_subdivision = subdivisions[0]
+                st.info(f"Subdivision: {selected_subdivision}")
+            
+            # Create and display chart
+            try:
+                chart = create_chart_for_kpi(kpi_name, selected_subdivision, data, selected_bu, selected_month)
+                st.plotly_chart(chart, use_container_width=True, key=f"emp_chart_{expanded_kpi}")
+            except Exception as e:
+                st.error(f"Error creating chart: {str(e)}")
+            
+            if st.button("❌ Close Analysis", key=f"close_emp_{expanded_kpi}"):
+                st.session_state.expanded_kpi['employee'] = None
+                st.rerun()
 
 with col2:
     # Customer & Service perspective
     st.markdown("### 👥 Customer & Service")
     
-    # Create buttons for customer KPIs
-    cust_cols = st.columns(5)
-    customer_kpis = ['csat', 'nps', 'sla', 'response_time', 'retention']
-    customer_values = [f"{avg_csat:.1f}/5", f"+{avg_nps:.0f}", f"{avg_sla:.0f}%", f"{avg_response:.1f}h", f"{avg_retention:.0f}%"]
-    customer_changes = [2.3, 4.2, 2.1, -3.2, -2.1]
+    cust_col1, cust_col2, cust_col3 = st.columns(3)
     
-    for i, (kpi_id, value, change) in enumerate(zip(customer_kpis, customer_values, customer_changes)):
-        with cust_cols[i]:
-            kpi_name, subdivisions = kpi_mappings['customer'][kpi_id]
-            if st.button(f"{kpi_name}\n{value}", key=f"cust_{kpi_id}", help=f"Click to analyze {kpi_name}"):
-                # Toggle expansion
-                if st.session_state.expanded_kpi.get('customer') == kpi_id:
-                    st.session_state.expanded_kpi['customer'] = None
-                else:
-                    st.session_state.expanded_kpi['customer'] = kpi_id
-                st.rerun
+    with cust_col1:
+        if st.button(f"CSAT\n{avg_csat:.1f}/5", key="cust_csat", help="Click to analyze CSAT"):
+            if st.session_state.expanded_kpi.get('customer') == 'csat':
+                st.session_state.expanded_kpi['customer'] = None
+            else:
+                st.session_state.expanded_kpi['customer'] = 'csat'
+            st.rerun()
+    
+    with cust_col2:
+        if st.button(f"NPS\n+{avg_nps:.0f}", key="cust_nps", help="Click to analyze NPS"):
+            if st.session_state.expanded_kpi.get('customer') == 'nps':
+                st.session_state.expanded_kpi['customer'] = None
+            else:
+                st.session_state.expanded_kpi['customer'] = 'nps'
+            st.rerun()
+    
+    with cust_col3:
+        if st.button(f"SLA\n{avg_sla:.0f}%", key="cust_sla", help="Click to analyze SLA Achievement"):
+            if st.session_state.expanded_kpi.get('customer') == 'sla':
+                st.session_state.expanded_kpi['customer'] = None
+            else:
+                st.session_state.expanded_kpi['customer'] = 'sla'
+            st.rerun()
+    
+    cust_col4, cust_col5 = st.columns(2)
+    
+    with cust_col4:
+        if st.button(f"Response Time\n{avg_response:.1f}h", key="cust_response", help="Click to analyze Response Time"):
+            if st.session_state.expanded_kpi.get('customer') == 'response_time':
+                st.session_state.expanded_kpi['customer'] = None
+            else:
+                st.session_state.expanded_kpi['customer'] = 'response_time'
+            st.rerun()
+    
+    with cust_col5:
+        if st.button(f"Retention\n{avg_retention:.0f}%", key="cust_retention", help="Click to analyze Retention Rate"):
+            if st.session_state.expanded_kpi.get('customer') == 'retention':
+                st.session_state.expanded_kpi['customer'] = None
+            else:
+                st.session_state.expanded_kpi['customer'] = 'retention'
+            st.rerun()
+    
+    # Show expanded analysis for Customer
+    if st.session_state.expanded_kpi.get('customer'):
+        expanded_kpi = st.session_state.expanded_kpi['customer']
+        kpi_name, subdivisions = kpi_mappings['customer'][expanded_kpi]
+        
+        with st.container():
+            st.markdown(f"""
+                <div class="analysis-container">
+                    <h4>📊 {kpi_name} Analysis</h4>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Subdivision selector
+            if len(subdivisions) > 1:
+                selected_subdivision = st.selectbox(
+                    "Select Subdivision:",
+                    subdivisions,
+                    key=f"cust_subdiv_{expanded_kpi}"
+                )
+            else:
+                selected_subdivision = subdivisions[0]
+                st.info(f"Subdivision: {selected_subdivision}")
+            
+            # Create and display chart
+            try:
+                chart = create_chart_for_kpi(kpi_name, selected_subdivision, data, selected_bu, selected_month)
+                st.plotly_chart(chart, use_container_width=True, key=f"cust_chart_{expanded_kpi}")
+            except Exception as e:
+                st.error(f"Error creating chart: {str(e)}")
+            
+            if st.button("❌ Close Analysis", key=f"close_cust_{expanded_kpi}"):
+                st.session_state.expanded_kpi['customer'] = None
+                st.rerun()
+    
+    st.markdown("---")
+    
+    # Quality & Process perspective
+    st.markdown("### ⚙️ Quality & Process")
+    
+    qual_col1, qual_col2 = st.columns(2)
+    
+    with qual_col1:
+        if st.button(f"Defect Rate\n{avg_defect_rate:.1f}%", key="qual_defect", help="Click to analyze Defect Rate"):
+            if st.session_state.expanded_kpi.get('quality') == 'defect_rate':
+                st.session_state.expanded_kpi['quality'] = None
+            else:
+                st.session_state.expanded_kpi['quality'] = 'defect_rate'
+            st.rerun()
+        
+        if st.button(f"Rework Rate\n{avg_rework:.1f}%", key="qual_rework", help="Click to analyze Rework Rate"):
+            if st.session_state.expanded_kpi.get('quality') == 'rework_rate':
+                st.session_state.expanded_kpi['quality'] = None
+            else:
+                st.session_state.expanded_kpi['quality'] = 'rework_rate'
+            st.rerun()
+    
+    with qual_col2:
+        if st.button(f"System Uptime\n{avg_uptime:.1f}%", key="qual_uptime", help="Click to analyze System Uptime"):
+            if st.session_state.expanded_kpi.get('quality') == 'uptime':
+                st.session_state.expanded_kpi['quality'] = None
+            else:
+                st.session_state.expanded_kpi['quality'] = 'uptime'
+            st.rerun()
+        
+        if st.button(f"Resolution Success\n{avg_resolution:.0f}%", key="qual_resolution", help="Click to analyze Resolution Success"):
+            if st.session_state.expanded_kpi.get('quality') == 'resolution':
+                st.session_state.expanded_kpi['quality'] = None
+            else:
+                st.session_state.expanded_kpi['quality'] = 'resolution'
+            st.rerun()
+    
+    # Show expanded analysis for Quality
+    if st.session_state.expanded_kpi.get('quality'):
+        expanded_kpi = st.session_state.expanded_kpi['quality']
+        kpi_name, subdivisions = kpi_mappings['quality'][expanded_kpi]
+        
+        with st.container():
+            st.markdown(f"""
+                <div class="analysis-container">
+                    <h4>📊 {kpi_name} Analysis</h4>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Subdivision selector
+            if len(subdivisions) > 1:
+                selected_subdivision = st.selectbox(
+                    "Select Subdivision:",
+                    subdivisions,
+                    key=f"qual_subdiv_{expanded_kpi}"
+                )
+            else:
+                selected_subdivision = subdivisions[0]
+                st.info(f"Subdivision: {selected_subdivision}")
+            
+            # Create and display chart
+            try:
+                chart = create_chart_for_kpi(kpi_name, selected_subdivision, data, selected_bu, selected_month)
+                st.plotly_chart(chart, use_container_width=True, key=f"qual_chart_{expanded_kpi}")
+            except Exception as e:
+                st.error(f"Error creating chart: {str(e)}")
+            
+            if st.button("❌ Close Analysis", key=f"close_qual_{expanded_kpi}"):
+                st.session_state.expanded_kpi['quality'] = None
+                st.rerun()
+
+# Footer
+st.markdown("---")
+st.markdown("### 📈 Key Insights & Actions")
+
+# Summary insights based on the data
+col_insight1, col_insight2, col_insight3 = st.columns(3)
+
+with col_insight1:
+    st.markdown("""
+    **💰 Financial Health**
+    - Revenue tracking vs targets
+    - Margin optimization opportunities
+    - Cost control measures
+    """)
+
+with col_insight2:
+    st.markdown("""
+    **👥 Customer Excellence**
+    - High satisfaction scores
+    - Strong retention rates
+    - Quick response times
+    """)
+
+with col_insight3:
+    st.markdown("""
+    **⚙️ Operational Excellence**
+    - Quality metrics monitoring
+    - Process improvements
+    - System reliability focus
+    """)
