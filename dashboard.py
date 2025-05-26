@@ -88,10 +88,86 @@ st.markdown("""
 if 'selected_kpi' not in st.session_state:
     st.session_state.selected_kpi = None
 
-# Data Generation
 @st.cache_data
 def generate_dummy_data():
-    # ... (same data generation code as previous)
+    """Generate comprehensive dummy data for the dashboard"""
+    
+    months = ['January', 'February', 'March', 'April', 'May', 'June']
+    bus = ['BU1', 'BU2', 'BU3']
+    subdivisions = ['PRODEV', 'PD1', 'PD2', 'DOCS', 'ITS', 'CHAPTER']
+    
+    data = {}
+    
+    # Financial Data
+    financial_data = []
+    for bu in bus:
+        for month in months:
+            for subdiv in subdivisions:
+                revenue = random.randint(800, 1500) if subdiv in ['PRODEV', 'PD1', 'PD2'] else random.randint(200, 600)
+                financial_data.append({
+                    'BU': bu,
+                    'Month': month,
+                    'Subdivision': subdiv,
+                    'Revenue': revenue,
+                    'Target': revenue * random.uniform(0.8, 1.2),
+                    'Gross_Margin': random.uniform(25, 45),
+                    'Cost_per_Project': random.randint(300, 600),
+                    'AR_Days': random.randint(25, 40)
+                })
+    
+    # Customer & Service Data
+    customer_data = []
+    for bu in bus:
+        for month in months:
+            for subdiv in ['PRODEV', 'PD1', 'PD2', 'DOCS']:
+                customer_data.append({
+                    'BU': bu,
+                    'Month': month,
+                    'Subdivision': subdiv,
+                    'CSAT': random.uniform(3.8, 4.5),
+                    'NPS': random.randint(35, 55),
+                    'SLA_Achievement': random.uniform(85, 98),
+                    'Avg_Response_Time': random.uniform(1.5, 4.0),
+                    'Retention_Rate': random.uniform(88, 96)
+                })
+    
+    # Quality Data
+    quality_data = []
+    for bu in bus:
+        for month in months:
+            subdivs = ['PRODEV', 'PD1', 'PD2', 'DOCS', 'ITS']
+            for subdiv in subdivs:
+                quality_data.append({
+                    'BU': bu,
+                    'Month': month,
+                    'Subdivision': subdiv,
+                    'Defect_Rate': random.uniform(0.5, 3.0),
+                    'System_Uptime': random.uniform(98.5, 99.9),
+                    'Rework_Rate': random.uniform(2.0, 8.0),
+                    'Resolution_Success': random.uniform(94, 99),
+                    'Code_Review_Coverage': random.uniform(75, 95)
+                })
+    
+    # Employee Data
+    employee_data = []
+    for bu in bus:
+        for month in months:
+            employee_data.append({
+                'BU': bu,
+                'Month': month,
+                'Subdivision': 'CHAPTER',
+                'Engagement_Score': random.uniform(7.0, 8.5),
+                'Attrition_Rate': random.uniform(5, 12),
+                'Training_Hours': random.randint(35, 55),
+                'Overtime_per_FTE': random.uniform(2.0, 4.5),
+                'Promotion_Rate': random.uniform(8, 15)
+            })
+    
+    data['financial'] = pd.DataFrame(financial_data)
+    data['customer'] = pd.DataFrame(customer_data)
+    data['quality'] = pd.DataFrame(quality_data)
+    data['employee'] = pd.DataFrame(employee_data)
+    
     return data
 
 # KPI Card Component
