@@ -590,14 +590,3 @@ def main():
             
             code_review_data = current_data['Quality Metrics']['Code Review Coverage']
             create_kpi_metric("Code Review", code_review_data['value'], "%", code_review_data['change'], "📝")
-        
-        # Employee Summary
-        st.markdown("### 👨‍💼 Employee Summary")
-        
-        engagement_data = current_data['Employee Fulfillment']['Engagement Score']
-        create_kpi_metric("Engagement Score", engagement_data['value'], "/10", engagement_data['change'], "👨‍💼")
-        
-        ef_col1, ef_col2 = st.columns(2)
-        
-        with ef_col1:
-            attrition_data = current_data['Employee Fulfillment']['Attrition Rate]
