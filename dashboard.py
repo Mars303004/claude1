@@ -356,4 +356,49 @@ with col2:
     employee_box = create_perspective_box("Employee Fulfillment", "👔",
         create_kpi_card_html("Engagement", f"{avg_engagement:.1f}", 0.6, "/10", "engagement") +
         create_kpi_card_html("Attrition", f"{employee_filtered['Attrition_Rate'].mean():.1f}", -1.4, "%", "attrition", True) +
-        create_kpi_card_html("Training", f"{employee_filtered['Training_Hours'].mean():.0f}", 5.2, "h", "
+        create_kpi_card_html("Training", f"{employee_filtered['Training_Hours'].mean():.0f}", 5.2, "h", "training") +
+        create_kpi_card_html("Overtime", f"{employee_filtered['Overtime_per_FTE'].mean():.1f}", 0.9, "h", "overtime")
+    )
+    st.markdown(employee_box, unsafe_allow_html=True)
+
+# Popup Handling
+if st.session_state.show_popup and 'selected_kpi_id' in st.session_state:
+    kpi_id = st.session_state.selected_kpi_id
+    kpi_info = kpi_mapping.get(kpi_id)
+    
+    if kpi_info:
+        st.markdown("---")
+        st.markdown(f"### 📈 Detailed Analysis: {kpi_info['name']}")
+        
+        selected_subdivision = st.selectbox(
+            "Select Subdivision:",
+            kpi_info['subdivisions'],
+            key="subdivision_select"
+        )
+        
+        try:
+            chart = create_chart_for_kpi(
+                kpi_info['name'], 
+                selected_subdivision, 
+                data, 
+                selected_bu, 
+                selected_month
+            )
+            st.plotly_chart(chart, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error creating chart: {str(e)}")
+        
+        if st.button("❌ Close Analysis", key="close_popup"):
+            st.session_state.show_popup = False
+            st.session_state.selected_kpi_id = None
+            st.experimental_set_query_params()
+            st.rerun()
+
+# Footer
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; color: #666; font-size: 12px;'>
+📊 IT Company Performance Dashboard | Last Updated: Real-time | 
+<span style='color: #00C851;'>●</span> System Status: Online
+</div>
+""", unsafe_allow_html=True)
