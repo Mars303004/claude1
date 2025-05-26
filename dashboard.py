@@ -601,7 +601,7 @@ def main():
         
         with ef_col1:
             attrition_data = current_data['Employee Fulfillment']['Attrition Rate']
-            create_kpi_metric("Attrition Rate", attrition_data['value'], "h", atritin_data['change'], "⏰")
+            create_kpi_metric("Attrition Rate", attrition_data['value'], "h", attrition_data['change'], "⏰")
 
         with ef_col2:
             # Overtime per FTE
