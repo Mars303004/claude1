@@ -118,7 +118,7 @@ if 'selected_kpi' not in st.session_state:
     st.session_state.selected_kpi = None
 
 # Handle query parameters
-query_params = st.experimental_get_query_params()
+query_params = st.query_params
 if 'kpi' in query_params and query_params['kpi']:
     st.session_state.selected_kpi_id = query_params['kpi'][0]
     st.session_state.show_popup = True
