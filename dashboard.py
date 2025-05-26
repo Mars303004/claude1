@@ -590,3 +590,27 @@ def main():
             
             code_review_data = current_data['Quality Metrics']['Code Review Coverage']
             create_kpi_metric("Code Review", code_review_data['value'], "%", code_review_data['change'], "📝")
+        
+        # Employee Summary
+        st.markdown("### 👨‍💼 Employee Summary")
+        
+        engagement_data = current_data['Employee Fulfillment']['Engagement Score']
+        create_kpi_metric("Engagement Score", engagement_data['value'], "/10", engagement_data['change'], "👨‍💼")
+        
+        ef_col1, ef_col2 = st.columns(2)
+        
+        with ef_col1:
+            attrition_data = current_data['Employee Fulfillment']['Attrition Rate']
+            create_kpi_metric("Attrition Rate", attrition_data['value'], "h", atritin_data['change'], "⏰")
+
+        with ef_col2:
+            # Overtime per FTE
+            overtime_data = current_data['Employee Fulfillment']['Overtime per FTE']  # Pastikan dua 'l' di 'Fulfillment'
+            create_kpi_metric("Overtime per FTE", overtime_data['value'], "h", overtime_data['change'], "⏰")
+            
+            # Internal Promotion Rate
+            promotion_data = current_data['Employee Fulfillment']['Internal Promotion Rate']  # Pastikan dua 'l'
+            create_kpi_metric("Internal Promotion Rate", promotion_data['value'], "%", promotion_data['change'], "🎖️")
+
+if __name__ == "__main__":
+    main()  # Tambahkan ini untuk menjalankan aplikasi
