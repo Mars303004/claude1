@@ -16,70 +16,10 @@ st.set_page_config(
 # Custom CSS
 st.markdown("""
 <style>
-    .main > div {
-        padding-top: 1rem;
-    }
-    .perspective-box {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 15px;
-        padding: 1rem;
-        margin: 0.5rem;
-        color: white;
-        height: 280px;
-        overflow: hidden;
-    }
-    .perspective-title {
-        font-size: 18px;
-        font-weight: bold;
-        margin-bottom: 0.8rem;
-        text-align: center;
-        border-bottom: 2px solid rgba(255,255,255,0.3);
-        padding-bottom: 0.5rem;
-    }
-    .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 0.5rem;
-        height: calc(100% - 60px);
-    }
+    /* ... (keep all previous CSS styles) ... */
     .kpi-card {
-        background: rgba(255,255,255,0.15);
-        border-radius: 8px;
-        padding: 0.5rem;
-        text-align: center;
-        transition: all 0.3s ease;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.2);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        min-height: 80px;
-        cursor: pointer;
-    }
-    .kpi-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        background: rgba(255,255,255,0.25);
-    }
-    .kpi-title {
-        font-size: 10px;
-        opacity: 0.9;
-        margin-bottom: 0.2rem;
-    }
-    .kpi-value {
-        font-size: 16px;
-        font-weight: bold;
-        margin: 0.1rem 0;
-    }
-    .kpi-change {
-        font-size: 9px;
-        margin-top: 0.1rem;
-    }
-    .positive-change {
-        color: #00ff88 !important;
-    }
-    .negative-change {
-        color: #ff6b6b !important;
+        /* tambahkan properti ini */
+        pointer-events: auto !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -88,6 +28,7 @@ st.markdown("""
 if 'selected_kpi' not in st.session_state:
     st.session_state.selected_kpi = None
 
+# Data Generation (gunakan fungsi generate_dummy_data yang sudah diperbaiki sebelumnya)
 @st.cache_data
 def generate_dummy_data():
     """Generate comprehensive dummy data for the dashboard"""
@@ -170,25 +111,30 @@ def generate_dummy_data():
     
     return data
 
-# KPI Card Component
-def create_kpi_card_html(title, value, change, unit="", kpi_id="", is_inverse=False):
+# KPI Card Component (diubah menggunakan button)
+def create_kpi_card(title, value, change, unit="", kpi_id="", is_inverse=False):
     change_class = "positive-change" if (change > 0 and not is_inverse) or (change < 0 and is_inverse) else "negative-change"
     sign = "+" if change > 0 else ""
     
-    return f"""
-    <div class="kpi-card" onclick="window.parent.postMessage({{'type': 'kpi_click', 'kpi_id': '{kpi_id}'}}, '*')">
-        <div class="kpi-title">{title}</div>
-        <div class="kpi-value">{value}{unit}</div>
-        <div class="kpi-change {change_class}">{sign}{change:.1f}% vs LY</div>
-    </div>
-    """
+    return st.button(
+        f"""
+        <div class="kpi-card">
+            <div class="kpi-title">{title}</div>
+            <div class="kpi-value">{value}{unit}</div>
+            <div class="kpi-change {change_class}">{sign}{change:.1f}% vs LY</div>
+        </div>
+        """,
+        key=f"btn_{kpi_id}",
+        on_click=lambda: st.session_state.update(selected_kpi=kpi_id),
+        unsafe_allow_html=True
+    )
 
-def create_perspective_box(title, icon, kpi_cards_html):
+def create_perspective_box(title, icon, kpi_cards):
     return f"""
     <div class="perspective-box">
         <div class="perspective-title">{icon} {title}</div>
         <div class="kpi-grid">
-            {kpi_cards_html}
+            {"".join(kpi_cards)}
         </div>
     </div>
     """
@@ -236,61 +182,40 @@ st.markdown(f"**Selected Period:** {selected_month}")
 col1, col2 = st.columns(2)
 
 with col1:
-    financial_box = create_perspective_box("Financial", "💰", 
-        create_kpi_card_html("Revenue", "$1.5", 12.5, "M", "revenue") +
-        create_kpi_card_html("Revenue vs Target", "98", -3.0, "%", "revenue_target") +
-        create_kpi_card_html("Gross Margin", "32", 3.2, "%", "gross_margin") +
-        create_kpi_card_html("Cost/Project", "$450", 5.1, "K", "cost_project") +
-        create_kpi_card_html("AR Days", "35", -3.0, "", "ar_days", True)
-    )
-    st.markdown(financial_box, unsafe_allow_html=True)
-
-    quality_box = create_perspective_box("Quality Metrics", "🛠️",
-        create_kpi_card_html("Defect Rate", "1.2", -0.3, "%", "defect_rate", True) +
-        create_kpi_card_html("System Uptime", "99.8", 0.1, "%", "uptime") +
-        create_kpi_card_html("Rework Rate", "3.1", -0.5, "%", "rework_rate", True) +
-        create_kpi_card_html("Resolution", "97.5", 1.2, "%", "resolution")
-    )
-    st.markdown(quality_box, unsafe_allow_html=True)
+    financial_cards = [
+        create_kpi_card("Revenue", "$1.5", 12.5, "M", "revenue"),
+        create_kpi_card("Revenue vs Target", "98", -3.0, "%", "revenue_target"),
+        create_kpi_card("Gross Margin", "32", 3.2, "%", "gross_margin"),
+        create_kpi_card("Cost/Project", "$450", 5.1, "K", "cost_project"),
+        create_kpi_card("AR Days", "35", -3.0, "", "ar_days", True)
+    ]
+    st.markdown(create_perspective_box("Financial", "💰", financial_cards), unsafe_allow_html=True)
+    
+    quality_cards = [
+        create_kpi_card("Defect Rate", "1.2", -0.3, "%", "defect_rate", True),
+        create_kpi_card("System Uptime", "99.8", 0.1, "%", "uptime"),
+        create_kpi_card("Rework Rate", "3.1", -0.5, "%", "rework_rate", True),
+        create_kpi_card("Resolution", "97.5", 1.2, "%", "resolution")
+    ]
+    st.markdown(create_perspective_box("Quality Metrics", "🛠️", quality_cards), unsafe_allow_html=True)
 
 with col2:
-    customer_box = create_perspective_box("Customer & Service", "👥",
-        create_kpi_card_html("CSAT", "4.2", 2.3, "/5", "csat") +
-        create_kpi_card_html("NPS", "+48", 4.2, "", "nps") +
-        create_kpi_card_html("SLA", "95", 2.1, "%", "sla") +
-        create_kpi_card_html("Response Time", "2.4", -3.2, "h", "response_time", True) +
-        create_kpi_card_html("Retention", "92", -2.1, "%", "retention")
-    )
-    st.markdown(customer_box, unsafe_allow_html=True)
-
-    employee_box = create_perspective_box("Employee Fulfillment", "👔",
-        create_kpi_card_html("Engagement", "8.1", 0.4, "/10", "engagement") +
-        create_kpi_card_html("Attrition", "9.2", -1.1, "%", "attrition", True) +
-        create_kpi_card_html("Training", "45", 5.0, "h", "training") +
-        create_kpi_card_html("Overtime", "3.2", 0.5, "h", "overtime")
-    )
-    st.markdown(employee_box, unsafe_allow_html=True)
-
-# Handle KPI clicks
-def handle_kpi_click(kpi_id):
-    st.session_state.selected_kpi = kpi_id
-
-# JavaScript communication
-components.html(
-    """
-    <script>
-    window.addEventListener('message', function(event) {
-        if (event.data.type === 'kpi_click') {
-            window.parent.postMessage({
-                'type': 'setKPI',
-                'kpi_id': event.data.kpi_id
-            }, '*');
-        }
-    });
-    </script>
-    """, 
-    height=0
-)
+    customer_cards = [
+        create_kpi_card("CSAT", "4.2", 2.3, "/5", "csat"),
+        create_kpi_card("NPS", "+48", 4.2, "", "nps"),
+        create_kpi_card("SLA", "95", 2.1, "%", "sla"),
+        create_kpi_card("Response Time", "2.4", -3.2, "h", "response_time", True),
+        create_kpi_card("Retention", "92", -2.1, "%", "retention")
+    ]
+    st.markdown(create_perspective_box("Customer & Service", "👥", customer_cards), unsafe_allow_html=True)
+    
+    employee_cards = [
+        create_kpi_card("Engagement", "8.1", 0.4, "/10", "engagement"),
+        create_kpi_card("Attrition", "9.2", -1.1, "%", "attrition", True),
+        create_kpi_card("Training", "45", 5.0, "h", "training"),
+        create_kpi_card("Overtime", "3.2", 0.5, "h", "overtime")
+    ]
+    st.markdown(create_perspective_box("Employee Fulfillment", "👔", employee_cards), unsafe_allow_html=True)
 
 # Handle expander
 if st.session_state.selected_kpi:
