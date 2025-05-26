@@ -532,4 +532,21 @@ def main():
                 with tab4:
                     st.metric("DOCS Rework Rate", "3.4%", "-0.2%")
         with qm_col3:
-            resolution_data =
+            # Resolution Success
+            resolution_data = current_data['Quality Metrics']['Resolution Success']
+            create_kpi_metric("Resolution Success", resolution_data['value'], "%", resolution_data['change'], "✅")
+            with st.expander("✅ Resolution Success Details", expanded=False):
+                st.markdown("**Resolution Success by Subdivision**")
+                tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
+                with tab1:
+                    st.metric("PRODEV Resolution", "97%", "+1%")
+                    fig = create_subdivision_chart("PRODEV Resolution", {"Jan": 95, "Feb": 96, "Mar": 96, "Apr": 97, "May": 98}, "line")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_resolution_prodev")
+                with tab2:
+                    st.metric("PD1 Resolution", "95%", "+1%")
+                    fig = create_subdivision_chart("PD1 Resolution", {"Jan": 94, "Feb": 94, "Mar": 95, "Apr": 95, "May": 96}, "bar")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_resolution_pd1")
+                with tab3:
+                    st.metric("PD2 Resolution", "94%", "+1%")
+                with tab4:
+                    st.metric("DOCS Resolution", "96%", "+2%")
