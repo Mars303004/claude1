@@ -337,7 +337,7 @@ def main():
     with col_left:
        # --- Financial Section ---
        st.markdown("### 📊 Financial")
-        fin_col1, fin_col2, fin_col3 = st.columns([1, 1, 1])
+       fin_col1, fin_col2, fin_col3 = st.columns([1, 1, 1])
         
         with fin_col1:
             with st.container():
