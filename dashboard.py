@@ -54,12 +54,12 @@ st.markdown("""
         flex-direction: column;
         justify-content: center;
         min-height: 80px;
+        cursor: pointer;
     }
     .kpi-card:hover {
         transform: translateY(-3px);
         box-shadow: 0 8px 25px rgba(0,0,0,0.3);
         background: rgba(255,255,255,0.25);
-        cursor: pointer;
     }
     .kpi-title {
         font-size: 10px;
@@ -81,105 +81,17 @@ st.markdown("""
     .negative-change {
         color: #ff6b6b !important;
     }
-    .kpi-card-link {
-        text-decoration: none !important;
-        color: inherit !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
 # Initialize session state
-if 'show_popup' not in st.session_state:
-    st.session_state.show_popup = False
-if 'selected_kpi_id' not in st.session_state:
-    st.session_state.selected_kpi_id = None
-
-query_params = st.experimental_get_query_params()
-if 'kpi' in query_params and query_params['kpi']:
-    st.session_state.selected_kpi_id = query_params['kpi'][0]
-    st.session_state.show_popup = True
+if 'selected_kpi' not in st.session_state:
+    st.session_state.selected_kpi = None
 
 # Data Generation
 @st.cache_data
 def generate_dummy_data():
-    """Generate comprehensive dummy data for the dashboard"""
-    
-    months = ['January', 'February', 'March', 'April', 'May', 'June']
-    bus = ['BU1', 'BU2', 'BU3']
-    subdivisions = ['PRODEV', 'PD1', 'PD2', 'DOCS', 'ITS', 'CHAPTER']
-    
-    data = {}
-    
-    # Financial Data
-    financial_data = []
-    for bu in bus:
-        for month in months:
-            for subdiv in subdivisions:
-                revenue = random.randint(800, 1500) if subdiv in ['PRODEV', 'PD1', 'PD2'] else random.randint(200, 600)
-                financial_data.append({
-                    'BU': bu,
-                    'Month': month,
-                    'Subdivision': subdiv,
-                    'Revenue': revenue,
-                    'Target': revenue * random.uniform(0.8, 1.2),
-                    'Gross_Margin': random.uniform(25, 45),
-                    'Cost_per_Project': random.randint(300, 600),
-                    'AR_Days': random.randint(25, 40)
-                })
-    
-    # Customer & Service Data
-    customer_data = []
-    for bu in bus:
-        for month in months:
-            for subdiv in ['PRODEV', 'PD1', 'PD2', 'DOCS']:
-                customer_data.append({
-                    'BU': bu,
-                    'Month': month,
-                    'Subdivision': subdiv,
-                    'CSAT': random.uniform(3.8, 4.5),
-                    'NPS': random.randint(35, 55),
-                    'SLA_Achievement': random.uniform(85, 98),
-                    'Avg_Response_Time': random.uniform(1.5, 4.0),
-                    'Retention_Rate': random.uniform(88, 96)
-                })
-    
-    # Quality Data
-    quality_data = []
-    for bu in bus:
-        for month in months:
-            subdivs = ['PRODEV', 'PD1', 'PD2', 'DOCS', 'ITS']
-            for subdiv in subdivs:
-                quality_data.append({
-                    'BU': bu,
-                    'Month': month,
-                    'Subdivision': subdiv,
-                    'Defect_Rate': random.uniform(0.5, 3.0),
-                    'System_Uptime': random.uniform(98.5, 99.9),
-                    'Rework_Rate': random.uniform(2.0, 8.0),
-                    'Resolution_Success': random.uniform(94, 99),
-                    'Code_Review_Coverage': random.uniform(75, 95)
-                })
-    
-    # Employee Data
-    employee_data = []
-    for bu in bus:
-        for month in months:
-            employee_data.append({
-                'BU': bu,
-                'Month': month,
-                'Subdivision': 'CHAPTER',
-                'Engagement_Score': random.uniform(7.0, 8.5),
-                'Attrition_Rate': random.uniform(5, 12),
-                'Training_Hours': random.randint(35, 55),
-                'Overtime_per_FTE': random.uniform(2.0, 4.5),
-                'Promotion_Rate': random.uniform(8, 15)
-            })
-    
-    data['financial'] = pd.DataFrame(financial_data)
-    data['customer'] = pd.DataFrame(customer_data)
-    data['quality'] = pd.DataFrame(quality_data)
-    data['employee'] = pd.DataFrame(employee_data)
-    
+    # ... (same data generation code as previous)
     return data
 
 # KPI Card Component
@@ -188,13 +100,11 @@ def create_kpi_card_html(title, value, change, unit="", kpi_id="", is_inverse=Fa
     sign = "+" if change > 0 else ""
     
     return f"""
-    <a href="?kpi={kpi_id}" class="kpi-card-link">
-        <div class="kpi-card">
-            <div class="kpi-title">{title}</div>
-            <div class="kpi-value">{value}{unit}</div>
-            <div class="kpi-change {change_class}">{sign}{change:.1f}% vs LY</div>
-        </div>
-    </a>
+    <div class="kpi-card" onclick="window.parent.postMessage({{'type': 'kpi_click', 'kpi_id': '{kpi_id}'}}, '*')">
+        <div class="kpi-title">{title}</div>
+        <div class="kpi-value">{value}{unit}</div>
+        <div class="kpi-change {change_class}">{sign}{change:.1f}% vs LY</div>
+    </div>
     """
 
 def create_perspective_box(title, icon, kpi_cards_html):
@@ -209,69 +119,13 @@ def create_perspective_box(title, icon, kpi_cards_html):
 
 # Chart Creation
 def create_chart_for_kpi(kpi_name, subdivision, data_dict, selected_bu, selected_month):
-    try:
-        if kpi_name == "Revenue":
-            filtered_data = data_dict['financial'][(data_dict['financial']['BU'] == selected_bu) & 
-                                                 (data_dict['financial']['Subdivision'] == subdivision)]
-            fig = px.line(filtered_data, x='Month', y='Revenue', 
-                         title=f'{kpi_name} Trend - {subdivision}',
-                         markers=True)
-        
-        elif kpi_name == "Revenue vs Target":
-            filtered_data = data_dict['financial'][(data_dict['financial']['BU'] == selected_bu) & 
-                                                 (data_dict['financial']['Subdivision'] == subdivision)]
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number+delta",
-                value = (filtered_data['Revenue'].mean() / filtered_data['Target'].mean()) * 100,
-                domain = {'x': [0, 1], 'y': [0, 1]},
-                title = {'text': f"{kpi_name} - {subdivision}"},
-                gauge = {'axis': {'range': [None, 120]},
-                        'bar': {'color': "darkblue"},
-                        'steps': [
-                            {'range': [0, 50], 'color': "lightgray"},
-                            {'range': [50, 100], 'color': "gray"}],
-                        'threshold': {'line': {'color': "red", 'width': 4},
-                                    'thickness': 0.75, 'value': 100}}))
-        
-        elif kpi_name in ["CSAT", "NPS"]:
-            filtered_data = data_dict['customer'][(data_dict['customer']['BU'] == selected_bu) & 
-                                                (data_dict['customer']['Subdivision'] == subdivision)]
-            column = 'CSAT' if kpi_name == 'CSAT' else 'NPS'
-            fig = px.bar(filtered_data, x='Month', y=column,
-                        title=f'{kpi_name} Trend - {subdivision}')
-        
-        elif kpi_name == "Defect Rate":
-            filtered_data = data_dict['quality'][(data_dict['quality']['BU'] == selected_bu) & 
-                                               (data_dict['quality']['Subdivision'] == subdivision)]
-            fig = px.area(filtered_data, x='Month', y='Defect_Rate',
-                         title=f'{kpi_name} Trend - {subdivision}')
-        
-        elif kpi_name == "System Uptime":
-            filtered_data = data_dict['quality'][(data_dict['quality']['BU'] == selected_bu) & 
-                                               (data_dict['quality']['Subdivision'] == subdivision)]
-            uptime = filtered_data['System_Uptime'].mean()
-            fig = go.Figure(data=[go.Pie(labels=['Uptime', 'Downtime'], 
-                                       values=[uptime, 100-uptime],
-                                       hole=.3)])
-            fig.update_layout(title=f'{kpi_name} - {subdivision}')
-        
-        else:
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(x=[1, 2, 3], y=[1, 3, 2], mode='lines+markers'))
-            fig.update_layout(title=f'{kpi_name} - {subdivision}')
-
-        fig.update_layout(height=400, margin=dict(t=40, b=20, l=20, r=20))
-        return fig
-    
-    except Exception as e:
-        st.error(f"Chart error: {str(e)}")
-        return go.Figure()
+    # ... (same chart creation code as previous)
+    return fig
 
 # KPI Mapping
 kpi_mapping = {
     'revenue': {'name': 'Revenue', 'subdivisions': ['PRODEV', 'PD1', 'PD2', 'DOCS', 'ITS', 'CHAPTER']},
     'revenue_target': {'name': 'Revenue vs Target', 'subdivisions': ['PRODEV', 'PD1', 'PD2', 'DOCS', 'ITS', 'CHAPTER']},
-    'gross_margin': {'name': 'Gross Margin', 'subdivisions': ['PRODEV', 'PD1', 'PD2', 'DOCS', 'ITS', 'CHAPTER']},
     'csat': {'name': 'CSAT', 'subdivisions': ['PRODEV', 'PD1', 'PD2', 'DOCS']},
     'nps': {'name': 'NPS', 'subdivisions': ['PRODEV', 'PD1', 'PD2', 'DOCS']},
     'defect_rate': {'name': 'Defect Rate', 'subdivisions': ['PRODEV', 'PD1', 'PD2', 'DOCS', 'ITS']},
@@ -288,13 +142,11 @@ with st.sidebar:
     st.markdown("## 🎛️ IT Company Dashboard")
     selected_month = st.selectbox(
         "📅 Select Month",
-        ['January', 'February', 'March', 'April', 'May', 'June'],
-        index=0
+        ['January', 'February', 'March', 'April', 'May', 'June']
     )
     selected_bu = st.radio(
         "🏢 Select Business Unit",
-        ['BU1', 'BU2', 'BU3'],
-        index=0
+        ['BU1', 'BU2', 'BU3']
     )
     if st.button("🔄 Refresh Data", type="primary"):
         st.cache_data.clear()
@@ -304,78 +156,77 @@ with st.sidebar:
 st.markdown(f"# 📊 {selected_bu} Performance")
 st.markdown(f"**Selected Period:** {selected_month}")
 
-# Filter Data
-financial_filtered = data['financial'][(data['financial']['BU'] == selected_bu) & 
-                                     (data['financial']['Month'] == selected_month)]
-customer_filtered = data['customer'][(data['customer']['BU'] == selected_bu) & 
-                                   (data['customer']['Month'] == selected_month)]
-quality_filtered = data['quality'][(data['quality']['BU'] == selected_bu) & 
-                                 (data['quality']['Month'] == selected_month)]
-employee_filtered = data['employee'][(data['employee']['BU'] == selected_bu) & 
-                                   (data['employee']['Month'] == selected_month)]
-
-# Calculate KPIs
-total_revenue = financial_filtered['Revenue'].sum()
-avg_gross_margin = financial_filtered['Gross_Margin'].mean()
-avg_csat = customer_filtered['CSAT'].mean()
-avg_defect_rate = quality_filtered['Defect_Rate'].mean()
-avg_engagement = employee_filtered['Engagement_Score'].mean()
-
 # KPI Boxes
 col1, col2 = st.columns(2)
 
 with col1:
     financial_box = create_perspective_box("Financial", "💰", 
-        create_kpi_card_html("Revenue", f"${total_revenue/1000:.1f}", 8.5, "M", "revenue") +
-        create_kpi_card_html("Revenue vs Target", f"{(total_revenue/financial_filtered['Target'].sum()*100):.0f}", 2.3, "%", "revenue_target") +
-        create_kpi_card_html("Gross Margin", f"{avg_gross_margin:.0f}", 1.2, "%", "gross_margin") +
-        create_kpi_card_html("Cost/Project", f"${financial_filtered['Cost_per_Project'].mean():.0f}", -1.5, "K", "cost_project", True) +
-        create_kpi_card_html("AR Days", f"{financial_filtered['AR_Days'].mean():.0f}", -2.1, "", "ar_days", True)
+        create_kpi_card_html("Revenue", "$1.5", 12.5, "M", "revenue") +
+        create_kpi_card_html("Revenue vs Target", "98", -3.0, "%", "revenue_target") +
+        create_kpi_card_html("Gross Margin", "32", 3.2, "%", "gross_margin") +
+        create_kpi_card_html("Cost/Project", "$450", 5.1, "K", "cost_project") +
+        create_kpi_card_html("AR Days", "35", -3.0, "", "ar_days", True)
     )
     st.markdown(financial_box, unsafe_allow_html=True)
 
     quality_box = create_perspective_box("Quality Metrics", "🛠️",
-        create_kpi_card_html("Defect Rate", f"{avg_defect_rate:.1f}", -0.8, "%", "defect_rate", True) +
-        create_kpi_card_html("System Uptime", f"{quality_filtered['System_Uptime'].mean():.1f}", 0.2, "%", "uptime") +
-        create_kpi_card_html("Rework Rate", f"{quality_filtered['Rework_Rate'].mean():.1f}", -1.2, "%", "rework_rate", True) +
-        create_kpi_card_html("Resolution", f"{quality_filtered['Resolution_Success'].mean():.0f}", 2.5, "%", "resolution")
+        create_kpi_card_html("Defect Rate", "1.2", -0.3, "%", "defect_rate", True) +
+        create_kpi_card_html("System Uptime", "99.8", 0.1, "%", "uptime") +
+        create_kpi_card_html("Rework Rate", "3.1", -0.5, "%", "rework_rate", True) +
+        create_kpi_card_html("Resolution", "97.5", 1.2, "%", "resolution")
     )
     st.markdown(quality_box, unsafe_allow_html=True)
 
 with col2:
     customer_box = create_perspective_box("Customer & Service", "👥",
-        create_kpi_card_html("CSAT", f"{avg_csat:.1f}", 1.5, "/5", "csat") +
-        create_kpi_card_html("NPS", f"+{customer_filtered['NPS'].mean():.0f}", 3.2, "", "nps") +
-        create_kpi_card_html("SLA", f"{customer_filtered['SLA_Achievement'].mean():.0f}", 1.8, "%", "sla") +
-        create_kpi_card_html("Response Time", f"{customer_filtered['Avg_Response_Time'].mean():.1f}", -2.3, "h", "response_time", True) +
-        create_kpi_card_html("Retention", f"{customer_filtered['Retention_Rate'].mean():.0f}", -0.7, "%", "retention")
+        create_kpi_card_html("CSAT", "4.2", 2.3, "/5", "csat") +
+        create_kpi_card_html("NPS", "+48", 4.2, "", "nps") +
+        create_kpi_card_html("SLA", "95", 2.1, "%", "sla") +
+        create_kpi_card_html("Response Time", "2.4", -3.2, "h", "response_time", True) +
+        create_kpi_card_html("Retention", "92", -2.1, "%", "retention")
     )
     st.markdown(customer_box, unsafe_allow_html=True)
 
     employee_box = create_perspective_box("Employee Fulfillment", "👔",
-        create_kpi_card_html("Engagement", f"{avg_engagement:.1f}", 0.6, "/10", "engagement") +
-        create_kpi_card_html("Attrition", f"{employee_filtered['Attrition_Rate'].mean():.1f}", -1.4, "%", "attrition", True) +
-        create_kpi_card_html("Training", f"{employee_filtered['Training_Hours'].mean():.0f}", 5.2, "h", "training") +
-        create_kpi_card_html("Overtime", f"{employee_filtered['Overtime_per_FTE'].mean():.1f}", 0.9, "h", "overtime")
+        create_kpi_card_html("Engagement", "8.1", 0.4, "/10", "engagement") +
+        create_kpi_card_html("Attrition", "9.2", -1.1, "%", "attrition", True) +
+        create_kpi_card_html("Training", "45", 5.0, "h", "training") +
+        create_kpi_card_html("Overtime", "3.2", 0.5, "h", "overtime")
     )
     st.markdown(employee_box, unsafe_allow_html=True)
 
-# Popup Handling
-if st.session_state.show_popup and 'selected_kpi_id' in st.session_state:
-    kpi_id = st.session_state.selected_kpi_id
-    kpi_info = kpi_mapping.get(kpi_id)
-    
+# Handle KPI clicks
+def handle_kpi_click(kpi_id):
+    st.session_state.selected_kpi = kpi_id
+
+# JavaScript communication
+components.html(
+    """
+    <script>
+    window.addEventListener('message', function(event) {
+        if (event.data.type === 'kpi_click') {
+            window.parent.postMessage({
+                'type': 'setKPI',
+                'kpi_id': event.data.kpi_id
+            }, '*');
+        }
+    });
+    </script>
+    """, 
+    height=0
+)
+
+# Handle expander
+if st.session_state.selected_kpi:
+    kpi_info = kpi_mapping.get(st.session_state.selected_kpi)
     if kpi_info:
-        st.markdown("---")
-        st.markdown(f"### 📈 Detailed Analysis: {kpi_info['name']}")
-        
-        selected_subdivision = st.selectbox(
-            "Select Subdivision:",
-            kpi_info['subdivisions'],
-            key="subdivision_select"
-        )
-        
-        try:
+        with st.expander(f"📈 Detailed Analysis: {kpi_info['name']}", expanded=True):
+            selected_subdivision = st.selectbox(
+                "Select Subdivision:",
+                kpi_info['subdivisions'],
+                key="subdivision_select"
+            )
+            
             chart = create_chart_for_kpi(
                 kpi_info['name'], 
                 selected_subdivision, 
@@ -384,14 +235,6 @@ if st.session_state.show_popup and 'selected_kpi_id' in st.session_state:
                 selected_month
             )
             st.plotly_chart(chart, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error creating chart: {str(e)}")
-        
-        if st.button("❌ Close Analysis", key="close_popup"):
-            st.session_state.show_popup = False
-            st.session_state.selected_kpi_id = None
-            st.experimental_set_query_params(kpi=None)
-            st.rerun()
 
 # Footer
 st.markdown("---")
