@@ -94,8 +94,7 @@ if 'show_popup' not in st.session_state:
 if 'selected_kpi_id' not in st.session_state:
     st.session_state.selected_kpi_id = None
 
-# Handle query parameters
-query_params = st.query_params.
+query_params = st.experimental_get_query_params()
 if 'kpi' in query_params and query_params['kpi']:
     st.session_state.selected_kpi_id = query_params['kpi'][0]
     st.session_state.show_popup = True
@@ -391,7 +390,7 @@ if st.session_state.show_popup and 'selected_kpi_id' in st.session_state:
         if st.button("❌ Close Analysis", key="close_popup"):
             st.session_state.show_popup = False
             st.session_state.selected_kpi_id = None
-            st.experimental_set_query_params()
+            st.experimental_set_query_params(kpi=None)
             st.rerun()
 
 # Footer
