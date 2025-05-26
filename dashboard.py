@@ -568,49 +568,6 @@ def main():
         st.markdown("### 📈 Performance Overview")
         fig_radar = create_radar_chart(st.session_state.selected_bu, st.session_state.selected_month)
         st.plotly_chart(fig_radar, use_container_width=True)
-        
-        # Quality Metrics Summary
-        st.markdown("### 🎯 Quality Summary")
-        
-        uptime_data = current_data['Quality Metrics']['System Uptime']
-        create_kpi_metric("System Uptime", uptime_data['value'], "%", uptime_data['change'], "⚡")
-        
-        qm_col1, qm_col2 = st.columns(2)
-        
-        with qm_col1:
-            defect_data = current_data['Quality Metrics']['Defect Rate']
-            create_kpi_metric("Defect Rate", defect_data['value'], "%", defect_data['change'], "🔍")
-            
-            rework_data = current_data['Quality Metrics']['Rework Rate']
-            create_kpi_metric("Rework Rate", rework_data['value'], "%", rework_data['change'], "🔄")
-        
-        with qm_col2:
-            resolution_data = current_data['Quality Metrics']['Resolution Success']
-            create_kpi_metric("Resolution Success", resolution_data['value'], "%", resolution_data['change'], "✅")
-            
-            code_review_data = current_data['Quality Metrics']['Code Review Coverage']
-            create_kpi_metric("Code Review", code_review_data['value'], "%", code_review_data['change'], "📝")
-        
-        # Employee Summary
-        st.markdown("### 👨‍💼 Employee Summary")
-        
-        engagement_data = current_data['Employee Fulfillment']['Engagement Score']
-        create_kpi_metric("Engagement Score", engagement_data['value'], "/10", engagement_data['change'], "👨‍💼")
-        
-        ef_col1, ef_col2 = st.columns(2)
-        
-        with ef_col1:
-            attrition_data = current_data['Employee Fulfillment']['Attrition Rate']
-            create_kpi_metric("Attrition Rate", attrition_data['value'], "h", attrition_data['change'], "⏰")
-
-        with ef_col2:
-            # Overtime per FTE
-            overtime_data = current_data['Employee Fulfillment']['Overtime per FTE']  # Pastikan dua 'l' di 'Fulfillment'
-            create_kpi_metric("Overtime per FTE", overtime_data['value'], "h", overtime_data['change'], "⏰")
-            
-            # Internal Promotion Rate
-            promotion_data = current_data['Employee Fulfillment']['Internal Promotion Rate']  # Pastikan dua 'l'
-            create_kpi_metric("Internal Promotion Rate", promotion_data['value'], "%", promotion_data['change'], "🎖️")
 
 if __name__ == "__main__":
     main()  # Tambahkan ini untuk menjalankan aplikasi
