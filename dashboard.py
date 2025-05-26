@@ -336,172 +336,172 @@ def main():
     col_left, col_right = st.columns([2, 1])
     with col_left:
        # --- Financial Section ---
-st.markdown("### 📊 Financial")
-fin_col1, fin_col2, fin_col3 = st.columns([1, 1, 1])
-
-with fin_col1:
-    with st.container():
-        st.markdown(
-            """
-            <style>
-                .kpi-box {
-                    padding: 15px;
-                    border-radius: 8px;
-                    background-color: #f0f2f6;
-                    margin-bottom: 10px;
-                }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-        # Revenue vs Target
-        target_data = current_data['Financial']['Revenue vs Target']
-        st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
-        create_kpi_metric("Revenue vs Target", target_data['value'], "%", target_data['change'], "🎯")
-        with st.expander("🎯 Revenue vs Target Details", expanded=False):
-            st.markdown("**Subdivision Breakdown**")
-            tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
-            with tab1:
-                st.metric("PRODEV Target Achievement", "98%", "3%")
-                fig = create_subdivision_chart("PRODEV Revenue vs Target", {"Jan": 95, "Feb": 97, "Mar": 96, "Apr": 98, "May": 99}, "line")
-                st.plotly_chart(fig, use_container_width=True, key="chart_target_prodev")
-            with tab2:
-                st.metric("PD1 Target Achievement", "89%", "2%")
-                fig = create_subdivision_chart("PD1 Revenue vs Target", {"Jan": 87, "Feb": 88, "Mar": 89, "Apr": 90, "May": 91}, "bar")
-                st.plotly_chart(fig, use_container_width=True, key="chart_target_pd1")
-            with tab3:
-                st.metric("PD2 Target Achievement", "92%", "1%")
-            with tab4:
-                st.metric("DOCS Target Achievement", "95%", "4%")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        # Cost per Project
-        cost_data = current_data['Financial']['Cost per Project']
-        st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
-        create_kpi_metric("Cost per Project", cost_data['value'], "K", cost_data['change'], "💸")
-        with st.expander("💸 Cost per Project Details", expanded=False):
-            st.markdown("**Cost Breakdown by Subdivision**")
-            tab1, tab2 = st.tabs(["PRODEV", "PD1"])
-            with tab1:
-                st.metric("PRODEV Cost", "$45K", "-5%")
-                fig = create_subdivision_chart("PRODEV Cost Trend", {"Jan": 48, "Feb": 47, "Mar": 45, "Apr": 44, "May": 42}, "line")
-                st.plotly_chart(fig, use_container_width=True, key="chart_cost_prodev")
-            with tab2:
-                st.metric("PD1 Cost", "$38K", "-2%")
-                fig = create_subdivision_chart("PD1 Cost Trend", {"Jan": 40, "Feb": 39, "Mar": 38, "Apr": 37, "May": 36}, "bar")
-                st.plotly_chart(fig, use_container_width=True, key="chart_cost_pd1")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-with fin_col2:
-    # Gross Margin
-    margin_data = current_data['Financial']['Gross Margin']
-    st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
-    create_kpi_metric("Gross Margin", margin_data['value'], "%", margin_data['change'], "📊")
-    with st.expander("📊 Gross Margin Details", expanded=False):
-        st.markdown("**Margin Analysis by Subdivision**")
-        tab1, tab2 = st.tabs(["PRODEV", "PD1"])
-        with tab1:
-            st.metric("PRODEV Margin", "42%", "2%")
-            fig = create_subdivision_chart("PRODEV Margin Trend", {"Jan": 40, "Feb": 41, "Mar": 42, "Apr": 43, "May": 44}, "line")
-            st.plotly_chart(fig, use_container_width=True, key="chart_margin_prodev")
-        with tab2:
-            st.metric("PD1 Margin", "38%", "1%")
-            fig = create_subdivision_chart("PD1 Margin Trend", {"Jan": 37, "Feb": 37, "Mar": 38, "Apr": 38, "May": 39}, "bar")
-            st.plotly_chart(fig, use_container_width=True, key="chart_margin_pd1")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # AR Days
-    ar_data = current_data['Financial']['AR Days']
-    st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
-    create_kpi_metric("AR Days", ar_data['value'], "days", ar_data['change'], "📅")
-    with st.expander("📅 AR Days Details", expanded=False):
-        st.markdown("**AR Days by Subdivision**")
-        tab1, tab2 = st.tabs(["PRODEV", "PD1"])
-        with tab1:
-            st.metric("PRODEV AR Days", "28", "-3")
-            fig = create_subdivision_chart("PRODEV AR Days", {"Jan": 31, "Feb": 30, "Mar": 29, "Apr": 28, "May": 27}, "line")
-            st.plotly_chart(fig, use_container_width=True, key="chart_ar_prodev")
-        with tab2:
-            st.metric("PD1 AR Days", "35", "-1")
-            fig = create_subdivision_chart("PD1 AR Days", {"Jan": 36, "Feb": 36, "Mar": 35, "Apr": 35, "May": 34}, "bar")
-            st.plotly_chart(fig, use_container_width=True, key="chart_ar_pd1")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with fin_col3:
-    # Revenue
-    revenue_data = current_data['Financial']['Revenue']
-    st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
-    create_kpi_metric("Revenue", revenue_data['value'], "M", revenue_data['change'], "💰")
-    with st.expander("💰 Revenue Details", expanded=False):
-        st.markdown("**Revenue Breakdown by Subdivision**")
-        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS", "ITS", "CHAPTER"])
-        with tab1:
-            st.metric("PRODEV Revenue", f"${revenue_data['subdivisions']['PRODEV']}K", "5.2%")
-            fig = create_subdivision_chart("PRODEV Revenue", {"Jan": 45, "Feb": 52, "Mar": 48, "Apr": 55, "May": 60}, "bar")
-            st.plotly_chart(fig, use_container_width=True, key="chart_revenue_prodev")
-        with tab2:
-            st.metric("PD1 Revenue", f"${revenue_data['subdivisions']['PD1']}K", "3.1%")
-            fig = create_subdivision_chart("PD1 Revenue", {"Jan": 35, "Feb": 42, "Mar": 38, "Apr": 45, "May": 50}, "line")
-            st.plotly_chart(fig, use_container_width=True, key="chart_revenue_pd1")
-        with tab3:
-            st.metric("PD2 Revenue", f"${revenue_data['subdivisions']['PD2']}K", "2.8%")
-        with tab4:
-            st.metric("DOCS Revenue", f"${revenue_data['subdivisions']['DOCS']}K", "1.5%")
-        with tab5:
-            st.metric("ITS Revenue", f"${revenue_data['subdivisions']['ITS']}K", "6.2%")
-        with tab6:
-            st.metric("CHAPTER Revenue", f"${revenue_data['subdivisions']['CHAPTER']}K", "4.1%")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-# --- Customer & Service Section ---
-st.markdown("### 👥 Customer & Service")
-cs_col1, cs_col2, cs_col3 = st.columns([1, 1, 1])
-
-with cs_col1:
-    # NPS
-    nps_data = current_data['Customer & Service']['NPS']
-    st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
-    create_kpi_metric("NPS", nps_data['value'], "", nps_data['change'], "📈")
-    with st.expander("📈 NPS Details", expanded=False):
-        st.markdown("**Net Promoter Score by Subdivision**")
-        tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
-        with tab1:
-            st.metric("PRODEV NPS", "50", "+5")
-            fig = create_subdivision_chart("PRODEV NPS", {"Jan": 45, "Feb": 47, "Mar": 48, "Apr": 49, "May": 50}, "line")
-            st.plotly_chart(fig, use_container_width=True, key="chart_nps_prodev")
-        with tab2:
-            st.metric("PD1 NPS", "40", "+3")
-            fig = create_subdivision_chart("PD1 NPS", {"Jan": 38, "Feb": 39, "Mar": 40, "Apr": 41, "May": 42}, "bar")
-            st.plotly_chart(fig, use_container_width=True, key="chart_nps_pd1")
-        with tab3:
-            st.metric("PD2 NPS", "45", "+2")
-        with tab4:
-            st.metric("DOCS NPS", "38", "+4")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Avg Response Time
-    response_data = current_data['Customer & Service']['Avg Response Time']
-    st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
-    create_kpi_metric("Avg Response Time", response_data['value'], "h", response_data['change'], "⏱️")
-    with st.expander("⏱️ Avg Response Time Details", expanded=False):
-        st.markdown("**Average Response Time by Subdivision**")
-        tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
-        with tab1:
-            st.metric("PRODEV Avg Response", "2.5h", "-0.3h")
-            fig = create_subdivision_chart("PRODEV Response Time", {"Jan": 3.0, "Feb": 2.8, "Mar": 2.7, "Apr": 2.6, "May": 2.5}, "line")
-            st.plotly_chart(fig, use_container_width=True, key="chart_response_prodev")
-        with tab2:
-            st.metric("PD1 Avg Response", "2.8h", "-0.2h")
-            fig = create_subdivision_chart("PD1 Response Time", {"Jan": 3.2, "Feb": 3.0, "Mar": 2.9, "Apr": 2.8, "May": 2.7}, "bar")
-            st.plotly_chart(fig, use_container_width=True, key="chart_response_pd1")
-        with tab3:
-            st.metric("PD2 Avg Response", "3.0h", "-0.1h")
-        with tab4:
-            st.metric("DOCS Avg Response", "2.6h", "-0.3h")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# (Tambahkan Quality Metrics dan Employee Fulfillment dengan format yang sama seperti di atas)
+       st.markdown("### 📊 Financial")
+        fin_col1, fin_col2, fin_col3 = st.columns([1, 1, 1])
+        
+        with fin_col1:
+            with st.container():
+                st.markdown(
+                    """
+                    <style>
+                        .kpi-box {
+                            padding: 15px;
+                            border-radius: 8px;
+                            background-color: #f0f2f6;
+                            margin-bottom: 10px;
+                        }
+                    </style>
+                    """,
+                    unsafe_allow_html=True
+                )
+                # Revenue vs Target
+                target_data = current_data['Financial']['Revenue vs Target']
+                st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
+                create_kpi_metric("Revenue vs Target", target_data['value'], "%", target_data['change'], "🎯")
+                with st.expander("🎯 Revenue vs Target Details", expanded=False):
+                    st.markdown("**Subdivision Breakdown**")
+                    tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
+                    with tab1:
+                        st.metric("PRODEV Target Achievement", "98%", "3%")
+                        fig = create_subdivision_chart("PRODEV Revenue vs Target", {"Jan": 95, "Feb": 97, "Mar": 96, "Apr": 98, "May": 99}, "line")
+                        st.plotly_chart(fig, use_container_width=True, key="chart_target_prodev")
+                    with tab2:
+                        st.metric("PD1 Target Achievement", "89%", "2%")
+                        fig = create_subdivision_chart("PD1 Revenue vs Target", {"Jan": 87, "Feb": 88, "Mar": 89, "Apr": 90, "May": 91}, "bar")
+                        st.plotly_chart(fig, use_container_width=True, key="chart_target_pd1")
+                    with tab3:
+                        st.metric("PD2 Target Achievement", "92%", "1%")
+                    with tab4:
+                        st.metric("DOCS Target Achievement", "95%", "4%")
+                st.markdown('</div>', unsafe_allow_html=True)
+        
+                # Cost per Project
+                cost_data = current_data['Financial']['Cost per Project']
+                st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
+                create_kpi_metric("Cost per Project", cost_data['value'], "K", cost_data['change'], "💸")
+                with st.expander("💸 Cost per Project Details", expanded=False):
+                    st.markdown("**Cost Breakdown by Subdivision**")
+                    tab1, tab2 = st.tabs(["PRODEV", "PD1"])
+                    with tab1:
+                        st.metric("PRODEV Cost", "$45K", "-5%")
+                        fig = create_subdivision_chart("PRODEV Cost Trend", {"Jan": 48, "Feb": 47, "Mar": 45, "Apr": 44, "May": 42}, "line")
+                        st.plotly_chart(fig, use_container_width=True, key="chart_cost_prodev")
+                    with tab2:
+                        st.metric("PD1 Cost", "$38K", "-2%")
+                        fig = create_subdivision_chart("PD1 Cost Trend", {"Jan": 40, "Feb": 39, "Mar": 38, "Apr": 37, "May": 36}, "bar")
+                        st.plotly_chart(fig, use_container_width=True, key="chart_cost_pd1")
+                st.markdown('</div>', unsafe_allow_html=True)
+        
+        with fin_col2:
+            # Gross Margin
+            margin_data = current_data['Financial']['Gross Margin']
+            st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
+            create_kpi_metric("Gross Margin", margin_data['value'], "%", margin_data['change'], "📊")
+            with st.expander("📊 Gross Margin Details", expanded=False):
+                st.markdown("**Margin Analysis by Subdivision**")
+                tab1, tab2 = st.tabs(["PRODEV", "PD1"])
+                with tab1:
+                    st.metric("PRODEV Margin", "42%", "2%")
+                    fig = create_subdivision_chart("PRODEV Margin Trend", {"Jan": 40, "Feb": 41, "Mar": 42, "Apr": 43, "May": 44}, "line")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_margin_prodev")
+                with tab2:
+                    st.metric("PD1 Margin", "38%", "1%")
+                    fig = create_subdivision_chart("PD1 Margin Trend", {"Jan": 37, "Feb": 37, "Mar": 38, "Apr": 38, "May": 39}, "bar")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_margin_pd1")
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+            # AR Days
+            ar_data = current_data['Financial']['AR Days']
+            st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
+            create_kpi_metric("AR Days", ar_data['value'], "days", ar_data['change'], "📅")
+            with st.expander("📅 AR Days Details", expanded=False):
+                st.markdown("**AR Days by Subdivision**")
+                tab1, tab2 = st.tabs(["PRODEV", "PD1"])
+                with tab1:
+                    st.metric("PRODEV AR Days", "28", "-3")
+                    fig = create_subdivision_chart("PRODEV AR Days", {"Jan": 31, "Feb": 30, "Mar": 29, "Apr": 28, "May": 27}, "line")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_ar_prodev")
+                with tab2:
+                    st.metric("PD1 AR Days", "35", "-1")
+                    fig = create_subdivision_chart("PD1 AR Days", {"Jan": 36, "Feb": 36, "Mar": 35, "Apr": 35, "May": 34}, "bar")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_ar_pd1")
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        with fin_col3:
+            # Revenue
+            revenue_data = current_data['Financial']['Revenue']
+            st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
+            create_kpi_metric("Revenue", revenue_data['value'], "M", revenue_data['change'], "💰")
+            with st.expander("💰 Revenue Details", expanded=False):
+                st.markdown("**Revenue Breakdown by Subdivision**")
+                tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS", "ITS", "CHAPTER"])
+                with tab1:
+                    st.metric("PRODEV Revenue", f"${revenue_data['subdivisions']['PRODEV']}K", "5.2%")
+                    fig = create_subdivision_chart("PRODEV Revenue", {"Jan": 45, "Feb": 52, "Mar": 48, "Apr": 55, "May": 60}, "bar")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_revenue_prodev")
+                with tab2:
+                    st.metric("PD1 Revenue", f"${revenue_data['subdivisions']['PD1']}K", "3.1%")
+                    fig = create_subdivision_chart("PD1 Revenue", {"Jan": 35, "Feb": 42, "Mar": 38, "Apr": 45, "May": 50}, "line")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_revenue_pd1")
+                with tab3:
+                    st.metric("PD2 Revenue", f"${revenue_data['subdivisions']['PD2']}K", "2.8%")
+                with tab4:
+                    st.metric("DOCS Revenue", f"${revenue_data['subdivisions']['DOCS']}K", "1.5%")
+                with tab5:
+                    st.metric("ITS Revenue", f"${revenue_data['subdivisions']['ITS']}K", "6.2%")
+                with tab6:
+                    st.metric("CHAPTER Revenue", f"${revenue_data['subdivisions']['CHAPTER']}K", "4.1%")
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        
+        # --- Customer & Service Section ---
+        st.markdown("### 👥 Customer & Service")
+        cs_col1, cs_col2, cs_col3 = st.columns([1, 1, 1])
+        
+        with cs_col1:
+            # NPS
+            nps_data = current_data['Customer & Service']['NPS']
+            st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
+            create_kpi_metric("NPS", nps_data['value'], "", nps_data['change'], "📈")
+            with st.expander("📈 NPS Details", expanded=False):
+                st.markdown("**Net Promoter Score by Subdivision**")
+                tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
+                with tab1:
+                    st.metric("PRODEV NPS", "50", "+5")
+                    fig = create_subdivision_chart("PRODEV NPS", {"Jan": 45, "Feb": 47, "Mar": 48, "Apr": 49, "May": 50}, "line")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_nps_prodev")
+                with tab2:
+                    st.metric("PD1 NPS", "40", "+3")
+                    fig = create_subdivision_chart("PD1 NPS", {"Jan": 38, "Feb": 39, "Mar": 40, "Apr": 41, "May": 42}, "bar")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_nps_pd1")
+                with tab3:
+                    st.metric("PD2 NPS", "45", "+2")
+                with tab4:
+                    st.metric("DOCS NPS", "38", "+4")
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+            # Avg Response Time
+            response_data = current_data['Customer & Service']['Avg Response Time']
+            st.markdown('<div class="kpi-box">', unsafe_allow_html=True)
+            create_kpi_metric("Avg Response Time", response_data['value'], "h", response_data['change'], "⏱️")
+            with st.expander("⏱️ Avg Response Time Details", expanded=False):
+                st.markdown("**Average Response Time by Subdivision**")
+                tab1, tab2, tab3, tab4 = st.tabs(["PRODEV", "PD1", "PD2", "DOCS"])
+                with tab1:
+                    st.metric("PRODEV Avg Response", "2.5h", "-0.3h")
+                    fig = create_subdivision_chart("PRODEV Response Time", {"Jan": 3.0, "Feb": 2.8, "Mar": 2.7, "Apr": 2.6, "May": 2.5}, "line")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_response_prodev")
+                with tab2:
+                    st.metric("PD1 Avg Response", "2.8h", "-0.2h")
+                    fig = create_subdivision_chart("PD1 Response Time", {"Jan": 3.2, "Feb": 3.0, "Mar": 2.9, "Apr": 2.8, "May": 2.7}, "bar")
+                    st.plotly_chart(fig, use_container_width=True, key="chart_response_pd1")
+                with tab3:
+                    st.metric("PD2 Avg Response", "3.0h", "-0.1h")
+                with tab4:
+                    st.metric("DOCS Avg Response", "2.6h", "-0.3h")
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        # (Tambahkan Quality Metrics dan Employee Fulfillment dengan format yang sama seperti di atas)
 
 
         # Quality Metrics Section
