@@ -15,54 +15,137 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for better styling
+# Custom CSS for better styling and compact layout
 st.markdown("""
 <style>
     .main > div {
-        padding-top: 2rem;
+        padding-top: 1rem;
     }
-    .metric-card {
+    .perspective-box {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
         padding: 1rem;
-        border-radius: 10px;
+        margin: 0.5rem;
         color: white;
-        margin: 0.5rem 0;
-        cursor: pointer;
-        transition: transform 0.2s;
+        height: 280px;
+        overflow: hidden;
     }
-    .metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    .perspective-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 0.8rem;
+        text-align: center;
+        border-bottom: 2px solid rgba(255,255,255,0.3);
+        padding-bottom: 0.5rem;
+    }
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 0.5rem;
+        height: calc(100% - 60px);
+    }
+    .kpi-card {
+        background: rgba(255,255,255,0.15);
+        border-radius: 8px;
+        padding: 0.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 80px;
+    }
+    .kpi-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        background: rgba(255,255,255,0.25);
+    }
+    .kpi-title {
+        font-size: 10px;
+        opacity: 0.9;
+        margin-bottom: 0.2rem;
+    }
+    .kpi-value {
+        font-size: 16px;
+        font-weight: bold;
+        margin: 0.1rem 0;
+    }
+    .kpi-change {
+        font-size: 9px;
+        margin-top: 0.1rem;
     }
     .positive-change {
-        color: #00C851 !important;
-        font-weight: bold;
+        color: #00ff88 !important;
     }
     .negative-change {
-        color: #FF4444 !important;
-        font-weight: bold;
+        color: #ff6b6b !important;
     }
-    .neutral-change {
-        color: #33b5e5 !important;
-        font-weight: bold;
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
-    .section-header {
-        background: linear-gradient(90deg, #4f46e5, #7c3aed);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
+    .popup-content {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        max-width: 80%;
+        max-height: 80%;
+        overflow: auto;
+        position: relative;
+    }
+    .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+    }
+    .subdivision-tabs {
+        display: flex;
+        gap: 0.5rem;
         margin: 1rem 0;
+        flex-wrap: wrap;
     }
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+    .subdivision-tab {
+        padding: 0.5rem 1rem;
+        background: #f0f2f6;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 12px;
     }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #f0f2f6;
-        border-radius: 8px;
-        padding: 8px 16px;
+    .subdivision-tab.active {
+        background: #4f46e5;
+        color: white;
+    }
+    .subdivision-tab:hover {
+        background: #e0e7ff;
+    }
+    .subdivision-tab.active:hover {
+        background: #3730a3;
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Initialize session state for popup management
+if 'show_popup' not in st.session_state:
+    st.session_state.show_popup = False
+if 'selected_kpi' not in st.session_state:
+    st.session_state.selected_kpi = None
+if 'selected_subdivision' not in st.session_state:
+    st.session_state.selected_subdivision = None
 
 # Data Generation Functions
 @st.cache_data
@@ -112,7 +195,7 @@ def generate_dummy_data():
     quality_data = []
     for bu in bus:
         for month in months:
-            subdivs = ['PRODEV', 'PD1', 'PD2', 'DOCS', 'ITS'] if random.choice([True, False]) else ['PRODEV', 'PD1', 'PD2', 'DOCS']
+            subdivs = ['PRODEV', 'PD1', 'PD2', 'DOCS', 'ITS']
             for subdiv in subdivs:
                 quality_data.append({
                     'BU': bu,
@@ -147,96 +230,144 @@ def generate_dummy_data():
     
     return data
 
-def format_change(value, is_inverse=False):
-    """Format change values with proper colors"""
-    if value == 0:
-        return f'<span class="neutral-change">0%</span>'
-    
-    if is_inverse:  # For metrics where lower is better (like AR Days, Defect Rate)
-        color_class = "positive-change" if value < 0 else "negative-change"
-    else:  # For metrics where higher is better
-        color_class = "positive-change" if value > 0 else "negative-change"
-    
-    sign = "+" if value > 0 else ""
-    return f'<span class="{color_class}">{sign}{value:.1f}% vs LY</span>'
-
-def create_kpi_card(title, value, change=None, unit="", is_inverse=False):
-    """Create a styled KPI card"""
-    change_html = ""
-    if change is not None:
-        change_html = f"<br>{format_change(change, is_inverse)}"
+def create_kpi_card_html(title, value, change, unit="", kpi_id="", is_inverse=False):
+    """Create HTML for KPI card with click handler"""
+    change_class = "positive-change" if (change > 0 and not is_inverse) or (change < 0 and is_inverse) else "negative-change"
+    sign = "+" if change > 0 else ""
     
     return f"""
-    <div class="metric-card">
-        <h4 style="margin: 0; font-size: 14px; opacity: 0.9;">{title}</h4>
-        <h2 style="margin: 5px 0; font-size: 28px;">{value}{unit}</h2>
-        {change_html}
+    <div class="kpi-card" onclick="handleKPIClick('{kpi_id}')">
+        <div class="kpi-title">{title}</div>
+        <div class="kpi-value">{value}{unit}</div>
+        <div class="kpi-change {change_class}">{sign}{change:.1f}% vs LY</div>
     </div>
     """
 
-def create_radar_chart(data, categories, values, title):
-    """Create a radar chart for performance overview"""
-    fig = go.Figure()
+def create_perspective_box(title, icon, kpi_cards_html):
+    """Create a perspective box containing KPI cards"""
+    return f"""
+    <div class="perspective-box">
+        <div class="perspective-title">{icon} {title}</div>
+        <div class="kpi-grid">
+            {kpi_cards_html}
+        </div>
+    </div>
+    """
+
+def create_chart_for_kpi(kpi_name, subdivision, data_dict, selected_bu, selected_month):
+    """Create appropriate chart for selected KPI and subdivision"""
     
-    fig.add_trace(go.Scatterpolar(
-        r=values,
-        theta=categories,
-        fill='toself',
-        name='Performance',
-        line_color='#4f46e5',
-        fillcolor='rgba(79, 70, 229, 0.3)'
-    ))
-    
-    fig.update_layout(
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 5]
-            )),
-        showlegend=False,
-        title=title,
-        height=300,
-        margin=dict(t=50, b=20, l=20, r=20)
-    )
-    
-    return fig
+    if kpi_name == "Revenue":
+        filtered_data = data_dict['financial'][(data_dict['financial']['BU'] == selected_bu) & 
+                                             (data_dict['financial']['Subdivision'] == subdivision)]
+        
+        # Monthly trend
+        monthly_data = data_dict['financial'][(data_dict['financial']['BU'] == selected_bu) & 
+                                            (data_dict['financial']['Subdivision'] == subdivision)]
+        
+        fig = px.line(monthly_data, x='Month', y='Revenue', 
+                     title=f'{kpi_name} Trend - {subdivision}',
+                     markers=True)
+        fig.update_layout(height=400)
+        return fig
+        
+    elif kpi_name == "Revenue vs Target":
+        filtered_data = data_dict['financial'][(data_dict['financial']['BU'] == selected_bu) & 
+                                             (data_dict['financial']['Subdivision'] == subdivision)]
+        
+        fig = go.Figure(go.Indicator(
+            mode = "gauge+number+delta",
+            value = (filtered_data['Revenue'].iloc[0] / filtered_data['Target'].iloc[0]) * 100,
+            domain = {'x': [0, 1], 'y': [0, 1]},
+            title = {'text': f"{kpi_name} - {subdivision}"},
+            gauge = {'axis': {'range': [None, 120]},
+                    'bar': {'color': "darkblue"},
+                    'steps': [
+                        {'range': [0, 50], 'color': "lightgray"},
+                        {'range': [50, 100], 'color': "gray"}],
+                    'threshold': {'line': {'color': "red", 'width': 4},
+                                'thickness': 0.75, 'value': 100}}))
+        fig.update_layout(height=400)
+        return fig
+        
+    elif kpi_name in ["CSAT", "NPS"]:
+        filtered_data = data_dict['customer'][(data_dict['customer']['BU'] == selected_bu) & 
+                                            (data_dict['customer']['Subdivision'] == subdivision)]
+        
+        monthly_data = data_dict['customer'][(data_dict['customer']['BU'] == selected_bu) & 
+                                           (data_dict['customer']['Subdivision'] == subdivision)]
+        
+        column = 'CSAT' if kpi_name == 'CSAT' else 'NPS'
+        fig = px.bar(monthly_data, x='Month', y=column,
+                    title=f'{kpi_name} Trend - {subdivision}')
+        fig.update_layout(height=400)
+        return fig
+        
+    elif kpi_name == "Defect Rate":
+        filtered_data = data_dict['quality'][(data_dict['quality']['BU'] == selected_bu) & 
+                                           (data_dict['quality']['Subdivision'] == subdivision)]
+        
+        monthly_data = data_dict['quality'][(data_dict['quality']['BU'] == selected_bu) & 
+                                          (data_dict['quality']['Subdivision'] == subdivision)]
+        
+        fig = px.area(monthly_data, x='Month', y='Defect_Rate',
+                     title=f'{kpi_name} Trend - {subdivision}')
+        fig.update_layout(height=400)
+        return fig
+        
+    elif kpi_name == "System Uptime":
+        filtered_data = data_dict['quality'][(data_dict['quality']['BU'] == selected_bu) & 
+                                           (data_dict['quality']['Subdivision'] == subdivision)]
+        
+        uptime = filtered_data['System_Uptime'].iloc[0]
+        downtime = 100 - uptime
+        
+        fig = go.Figure(data=[go.Pie(labels=['Uptime', 'Downtime'], 
+                                   values=[uptime, downtime],
+                                   hole=.3)])
+        fig.update_layout(title=f'{kpi_name} - {subdivision}', height=400)
+        return fig
+        
+    else:
+        # Default chart for other KPIs
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=[1, 2, 3, 4, 5], y=[1, 4, 2, 3, 5], mode='lines+markers'))
+        fig.update_layout(title=f'{kpi_name} - {subdivision}', height=400)
+        return fig
 
 # Load data
 data = generate_dummy_data()
 
 # Sidebar
-st.sidebar.markdown("## 🎛️ IT Company Dashboard")
-
-# Month selection
-selected_month = st.sidebar.selectbox(
-    "📅 Select Month",
-    ['January', 'February', 'March', 'April', 'May', 'June'],
-    index=0
-)
-
-# Business Unit selection
-selected_bu = st.sidebar.radio(
-    "🏢 Select Business Unit",
-    ['BU1', 'BU2', 'BU3'],
-    index=0
-)
-
-# Refresh button
-if st.sidebar.button("🔄 Refresh Data", type="primary"):
-    st.cache_data.clear()
-    st.rerun()
-
-# Advanced Dashboard button
-st.sidebar.markdown("---")
-if st.sidebar.button("➡️ Go to Advanced Dashboard", type="secondary"):
-    st.info("Advanced Dashboard would open here!")
+with st.sidebar:
+    st.markdown("## 🎛️ IT Company Dashboard")
+    
+    # Month selection
+    selected_month = st.selectbox(
+        "📅 Select Month",
+        ['January', 'February', 'March', 'April', 'May', 'June'],
+        index=0
+    )
+    
+    # Business Unit selection
+    selected_bu = st.radio(
+        "🏢 Select Business Unit",
+        ['BU1', 'BU2', 'BU3'],
+        index=0
+    )
+    
+    # Refresh button
+    if st.button("🔄 Refresh Data", type="primary"):
+        st.cache_data.clear()
+        st.rerun()
+    
+    st.markdown("---")
+    if st.button("➡️ Go to Advanced Dashboard", type="secondary"):
+        st.info("Advanced Dashboard would open here!")
 
 # Main Header
-col1, col2 = st.columns([3, 1])
-with col1:
-    st.title(f"📊 {selected_bu} Performance")
-with col2:
-    st.markdown(f"**Selected Period:** {selected_month}")
+st.markdown(f"# 📊 {selected_bu} Performance")
+st.markdown(f"**Selected Period:** {selected_month}")
 
 # Filter data for selected BU and month
 financial_filtered = data['financial'][(data['financial']['BU'] == selected_bu) & 
@@ -248,228 +379,152 @@ quality_filtered = data['quality'][(data['quality']['BU'] == selected_bu) &
 employee_filtered = data['employee'][(data['employee']['BU'] == selected_bu) & 
                                    (data['employee']['Month'] == selected_month)]
 
-# Main content area
-col1, col2 = st.columns([2, 1])
+# Calculate aggregated values
+total_revenue = financial_filtered['Revenue'].sum()
+revenue_vs_target = ((total_revenue / financial_filtered['Target'].sum()) - 1) * 100 if not financial_filtered.empty else 0
+avg_gross_margin = financial_filtered['Gross_Margin'].mean() if not financial_filtered.empty else 0
+avg_cost_per_project = financial_filtered['Cost_per_Project'].mean() if not financial_filtered.empty else 0
+avg_ar_days = financial_filtered['AR_Days'].mean() if not financial_filtered.empty else 0
+
+avg_csat = customer_filtered['CSAT'].mean() if not customer_filtered.empty else 0
+avg_nps = customer_filtered['NPS'].mean() if not customer_filtered.empty else 0
+avg_sla = customer_filtered['SLA_Achievement'].mean() if not customer_filtered.empty else 0
+avg_response = customer_filtered['Avg_Response_Time'].mean() if not customer_filtered.empty else 0
+avg_retention = customer_filtered['Retention_Rate'].mean() if not customer_filtered.empty else 0
+
+avg_defect_rate = quality_filtered['Defect_Rate'].mean() if not quality_filtered.empty else 0
+avg_uptime = quality_filtered['System_Uptime'].mean() if not quality_filtered.empty else 0
+avg_rework = quality_filtered['Rework_Rate'].mean() if not quality_filtered.empty else 0
+avg_resolution = quality_filtered['Resolution_Success'].mean() if not quality_filtered.empty else 0
+
+avg_engagement = employee_filtered['Engagement_Score'].mean() if not employee_filtered.empty else 0
+avg_attrition = employee_filtered['Attrition_Rate'].mean() if not employee_filtered.empty else 0
+avg_training = employee_filtered['Training_Hours'].mean() if not employee_filtered.empty else 0
+avg_overtime = employee_filtered['Overtime_per_FTE'].mean() if not employee_filtered.empty else 0
+
+# Create KPI cards HTML
+financial_kpis = (
+    create_kpi_card_html("Revenue", f"${total_revenue/1000:.1f}", 12.5, "M", "revenue") +
+    create_kpi_card_html("Revenue vs Target", f"{revenue_vs_target:.0f}", -3.0, "%", "revenue_target") +
+    create_kpi_card_html("Gross Margin", f"{avg_gross_margin:.0f}", 3.2, "%", "gross_margin") +
+    create_kpi_card_html("Cost per Project", f"${avg_cost_per_project:.0f}", 5.1, "K", "cost_project") +
+    create_kpi_card_html("AR Days", f"{avg_ar_days:.0f}", -3.0, "", "ar_days", True)
+)
+
+customer_kpis = (
+    create_kpi_card_html("CSAT", f"{avg_csat:.1f}", 2.3, "/5", "csat") +
+    create_kpi_card_html("NPS", f"+{avg_nps:.0f}", 4.2, "", "nps") +
+    create_kpi_card_html("SLA Achievement", f"{avg_sla:.0f}", 2.1, "%", "sla") +
+    create_kpi_card_html("Avg Response Time", f"{avg_response:.1f}", -3.2, "h", "response_time", True) +
+    create_kpi_card_html("Retention Rate", f"{avg_retention:.0f}", -2.1, "%", "retention")
+)
+
+quality_kpis = (
+    create_kpi_card_html("Defect Rate", f"{avg_defect_rate:.1f}", -0.3, "%", "defect_rate", True) +
+    create_kpi_card_html("System Uptime", f"{avg_uptime:.2f}", 0.1, "%", "uptime") +
+    create_kpi_card_html("Rework Rate", f"{avg_rework:.1f}", -0.5, "%", "rework_rate", True) +
+    create_kpi_card_html("Resolution Success", f"{avg_resolution:.1f}", 1.2, "%", "resolution")
+)
+
+employee_kpis = (
+    create_kpi_card_html("Engagement Score", f"{avg_engagement:.1f}", 0.4, "/10", "engagement") +
+    create_kpi_card_html("Attrition Rate", f"{avg_attrition:.1f}", -1.1, "%", "attrition", True) +
+    create_kpi_card_html("Training Hours/Emp", f"{avg_training:.0f}", 5.0, "", "training") +
+    create_kpi_card_html("Overtime per FTE", f"{avg_overtime:.1f}", 0.5, "h", "overtime")
+)
+
+# 2x2 Grid Layout
+col1, col2 = st.columns(2)
 
 with col1:
-    # Financial Section
-    st.markdown('<div class="section-header"><h3>💰 Financial</h3></div>', unsafe_allow_html=True)
+    # Financial perspective
+    financial_box = create_perspective_box("Financial", "💰", financial_kpis)
+    st.markdown(financial_box, unsafe_allow_html=True)
     
-    # Financial KPIs
-    fin_cols = st.columns(5)
-    
-    total_revenue = financial_filtered['Revenue'].sum()
-    revenue_vs_target = ((total_revenue / financial_filtered['Target'].sum()) - 1) * 100
-    avg_gross_margin = financial_filtered['Gross_Margin'].mean()
-    avg_cost_per_project = financial_filtered['Cost_per_Project'].mean()
-    avg_ar_days = financial_filtered['AR_Days'].mean()
-    
-    with fin_cols[0]:
-        st.markdown(create_kpi_card("Revenue", f"${total_revenue/1000:.1f}", 12.5, "M"), unsafe_allow_html=True)
-    
-    with fin_cols[1]:
-        st.markdown(create_kpi_card("Revenue vs Target", f"{revenue_vs_target:.0f}", -3.0, "%"), unsafe_allow_html=True)
-    
-    with fin_cols[2]:
-        st.markdown(create_kpi_card("Gross Margin", f"{avg_gross_margin:.0f}", 3.2, "%"), unsafe_allow_html=True)
-    
-    with fin_cols[3]:
-        st.markdown(create_kpi_card("Cost per Project", f"${avg_cost_per_project:.0f}", 5.1, "K"), unsafe_allow_html=True)
-    
-    with fin_cols[4]:
-        st.markdown(create_kpi_card("AR Days", f"{avg_ar_days:.0f}", -3.0, "", True), unsafe_allow_html=True)
-    
-    # Revenue by Subdivision Chart
-    st.subheader("Revenue by Subdivision")
-    revenue_chart = px.bar(
-        financial_filtered,
-        x='Subdivision',
-        y='Revenue',
-        color='Subdivision',
-        color_discrete_sequence=px.colors.qualitative.Set3
-    )
-    revenue_chart.update_layout(height=250, margin=dict(t=20, b=20, l=20, r=20))
-    st.plotly_chart(revenue_chart, use_container_width=True)
-    
-    # Customer & Service Section
-    st.markdown('<div class="section-header"><h3>👥 Customer & Service</h3></div>', unsafe_allow_html=True)
-    
-    # Customer KPIs
-    cust_cols = st.columns(5)
-    
-    avg_csat = customer_filtered['CSAT'].mean()
-    avg_nps = customer_filtered['NPS'].mean()
-    avg_sla = customer_filtered['SLA_Achievement'].mean()
-    avg_response = customer_filtered['Avg_Response_Time'].mean()
-    avg_retention = customer_filtered['Retention_Rate'].mean()
-    
-    with cust_cols[0]:
-        st.markdown(create_kpi_card("CSAT", f"{avg_csat:.1f}", 2.3, "/5"), unsafe_allow_html=True)
-    
-    with cust_cols[1]:
-        st.markdown(create_kpi_card("NPS", f"+{avg_nps:.0f}", 4.2), unsafe_allow_html=True)
-    
-    with cust_cols[2]:
-        st.markdown(create_kpi_card("SLA Achievement", f"{avg_sla:.0f}", 2.1, "%"), unsafe_allow_html=True)
-    
-    with cust_cols[3]:
-        st.markdown(create_kpi_card("Avg Response Time", f"{avg_response:.1f}", -3.2, "h", True), unsafe_allow_html=True)
-    
-    with cust_cols[4]:
-        st.markdown(create_kpi_card("Retention Rate", f"{avg_retention:.0f}", -2.1, "%"), unsafe_allow_html=True)
-    
-    # Customer Satisfaction Trends
-    st.subheader("Customer Satisfaction Trends")
-    
-    # Generate trend data for the chart
-    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-    csat_trend = [4.1, 4.2, 4.15, 4.25, 4.3, avg_csat]
-    nps_trend = [38, 40, 42, 45, 43, avg_nps]
-    
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
-    
-    fig.add_trace(
-        go.Scatter(x=months, y=csat_trend, name="CSAT", line=dict(color='#00C851', width=3)),
-        secondary_y=False,
-    )
-    
-    fig.add_trace(
-        go.Scatter(x=months, y=nps_trend, name="NPS", line=dict(color='#33b5e5', width=3)),
-        secondary_y=True,
-    )
-    
-    fig.update_yaxes(title_text="CSAT (Scale 1-5)", secondary_y=False)
-    fig.update_yaxes(title_text="NPS", secondary_y=True)
-    fig.update_layout(height=250, margin=dict(t=20, b=20, l=20, r=20))
-    
-    st.plotly_chart(fig, use_container_width=True)
+    # Quality perspective
+    quality_box = create_perspective_box("Quality Metrics", "🛠️", quality_kpis)
+    st.markdown(quality_box, unsafe_allow_html=True)
 
 with col2:
-    # Performance Overview Radar Chart
-    st.markdown('<div class="section-header"><h3>📈 Performance Overview</h3></div>', unsafe_allow_html=True)
+    # Customer & Service perspective
+    customer_box = create_perspective_box("Customer & Service", "👥", customer_kpis)
+    st.markdown(customer_box, unsafe_allow_html=True)
     
-    # Calculate performance scores
-    perf_categories = ['Employee Engagement', 'Client Margin', 'Quality (Low Defects)', 'CSAT', 'SLA Achievement']
-    
-    # Normalize values to 0-5 scale
-    engagement_score = employee_filtered['Engagement_Score'].mean() * 0.6 if not employee_filtered.empty else 4.2
-    margin_score = (avg_gross_margin / 10) if not financial_filtered.empty else 3.8
-    quality_score = 5 - (quality_filtered['Defect_Rate'].mean() if not quality_filtered.empty else 1.2)
-    csat_score = avg_csat if not customer_filtered.empty else 4.1
-    sla_score = (avg_sla / 20) if not customer_filtered.empty else 4.5
-    
-    perf_values = [engagement_score, margin_score, quality_score, csat_score, sla_score]
-    
-    radar_fig = create_radar_chart(None, perf_categories, perf_values, "")
-    st.plotly_chart(radar_fig, use_container_width=True)
-    
-    # Quality Metrics
-    st.markdown('<div class="section-header"><h3>🛠️ Quality Metrics</h3></div>', unsafe_allow_html=True)
-    
-    if not quality_filtered.empty:
-        avg_defect_rate = quality_filtered['Defect_Rate'].mean()
-        avg_uptime = quality_filtered['System_Uptime'].mean()
-        avg_rework = quality_filtered['Rework_Rate'].mean()
-        avg_resolution = quality_filtered['Resolution_Success'].mean()
-    else:
-        avg_defect_rate, avg_uptime, avg_rework, avg_resolution = 1.2, 99.95, 3.8, 97.2
-    
-    st.markdown(create_kpi_card("Defect Rate", f"{avg_defect_rate:.1f}", -0.3, "%", True), unsafe_allow_html=True)
-    st.markdown(create_kpi_card("System Uptime", f"{avg_uptime:.2f}", 0.1, "%"), unsafe_allow_html=True)
-    st.markdown(create_kpi_card("Rework Rate", f"{avg_rework:.1f}", -0.5, "%", True), unsafe_allow_html=True)
-    st.markdown(create_kpi_card("Resolution Success", f"{avg_resolution:.1f}", 1.2, "%"), unsafe_allow_html=True)
-    
-    # Employee Fulfillment
-    st.markdown('<div class="section-header"><h3>👔 Employee Fulfillment</h3></div>', unsafe_allow_html=True)
-    
-    if not employee_filtered.empty:
-        avg_engagement = employee_filtered['Engagement_Score'].mean()
-        avg_attrition = employee_filtered['Attrition_Rate'].mean()
-        avg_training = employee_filtered['Training_Hours'].mean()
-        avg_overtime = employee_filtered['Overtime_per_FTE'].mean()
-    else:
-        avg_engagement, avg_attrition, avg_training, avg_overtime = 7.8, 8.2, 42, 3.2
-    
-    st.markdown(create_kpi_card("Engagement Score", f"{avg_engagement:.1f}", 0.4, "/10"), unsafe_allow_html=True)
-    st.markdown(create_kpi_card("Attrition Rate", f"{avg_attrition:.1f}", -1.1, "%", True), unsafe_allow_html=True)
-    st.markdown(create_kpi_card("Training Hours/Emp", f"{avg_training:.0f}", 5.0), unsafe_allow_html=True)
-    st.markdown(create_kpi_card("Overtime per FTE", f"{avg_overtime:.1f}", 0.5, "h"), unsafe_allow_html=True)
+    # Employee perspective
+    employee_box = create_perspective_box("Employee Fulfillment", "👔", employee_kpis)
+    st.markdown(employee_box, unsafe_allow_html=True)
 
-# Interactive KPI Details Section
+# JavaScript for handling KPI clicks
+st.markdown("""
+<script>
+function handleKPIClick(kpiId) {
+    // This would normally trigger the popup
+    console.log('KPI clicked:', kpiId);
+    // In Streamlit, we'll use a different approach with session state
+}
+</script>
+""", unsafe_allow_html=True)
+
+# Handle KPI selection through buttons (alternative approach)
 st.markdown("---")
-st.markdown('<div class="section-header"><h3>🔍 Detailed Analysis</h3></div>', unsafe_allow_html=True)
+st.markdown("### 🔍 Click on any KPI above to see detailed analysis")
 
-# Tabs for different perspectives
-tab1, tab2, tab3, tab4 = st.tabs(["💰 Financial Details", "👥 Customer Details", "🛠️ Quality Details", "👔 Employee Details"])
+# Create invisible buttons for KPI selection
+kpi_cols = st.columns(8)
+kpi_buttons = [
+    ("Revenue", "revenue", ["PRODEV", "PD1", "PD2", "DOCS", "ITS", "CHAPTER"]),
+    ("Revenue vs Target", "revenue_target", ["PRODEV", "PD1", "PD2", "DOCS", "ITS", "CHAPTER"]),
+    ("CSAT", "csat", ["PRODEV", "PD1", "PD2", "DOCS"]),
+    ("NPS", "nps", ["PRODEV", "PD1", "PD2", "DOCS"]),
+    ("Defect Rate", "defect_rate", ["PRODEV", "PD1", "PD2", "DOCS", "ITS"]),
+    ("System Uptime", "uptime", ["PRODEV", "PD1", "PD2", "DOCS", "ITS"]),
+    ("Engagement Score", "engagement", ["CHAPTER"]),
+    ("Attrition Rate", "attrition", ["CHAPTER"])
+]
 
-with tab1:
-    if not financial_filtered.empty:
-        st.markdown("**Subdivision Performance:**")
-        
-        subdivision_tabs = st.tabs(financial_filtered['Subdivision'].unique().tolist())
-        
-        for i, subdiv in enumerate(financial_filtered['Subdivision'].unique()):
-            with subdivision_tabs[i]:
-                subdiv_data = financial_filtered[financial_filtered['Subdivision'] == subdiv]
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Revenue", f"${subdiv_data['Revenue'].iloc[0]/1000:.1f}M")
-                with col2:
-                    target_pct = (subdiv_data['Revenue'].iloc[0] / subdiv_data['Target'].iloc[0]) * 100
-                    st.metric("vs Target", f"{target_pct:.1f}%")
-                with col3:
-                    st.metric("Gross Margin", f"{subdiv_data['Gross_Margin'].iloc[0]:.1f}%")
+for i, (kpi_name, kpi_id, subdivisions) in enumerate(kpi_buttons):
+    with kpi_cols[i % 8]:
+        if st.button(f"📊 {kpi_name}", key=f"btn_{kpi_id}", help=f"Analyze {kpi_name}"):
+            st.session_state.selected_kpi = kpi_name
+            st.session_state.selected_kpi_id = kpi_id
+            st.session_state.available_subdivisions = subdivisions
+            st.session_state.show_popup = True
 
-with tab2:
-    if not customer_filtered.empty:
-        st.markdown("**Customer Metrics by Subdivision:**")
-        
-        subdivision_tabs = st.tabs(customer_filtered['Subdivision'].unique().tolist())
-        
-        for i, subdiv in enumerate(customer_filtered['Subdivision'].unique()):
-            with subdivision_tabs[i]:
-                subdiv_data = customer_filtered[customer_filtered['Subdivision'] == subdiv]
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("CSAT", f"{subdiv_data['CSAT'].iloc[0]:.2f}/5")
-                with col2:
-                    st.metric("NPS", f"+{subdiv_data['NPS'].iloc[0]:.0f}")
-                with col3:
-                    st.metric("SLA Achievement", f"{subdiv_data['SLA_Achievement'].iloc[0]:.1f}%")
-
-with tab3:
-    if not quality_filtered.empty:
-        st.markdown("**Quality Metrics by Subdivision:**")
-        
-        subdivision_tabs = st.tabs(quality_filtered['Subdivision'].unique().tolist())
-        
-        for i, subdiv in enumerate(quality_filtered['Subdivision'].unique()):
-            with subdivision_tabs[i]:
-                subdiv_data = quality_filtered[quality_filtered['Subdivision'] == subdiv]
-                
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Defect Rate", f"{subdiv_data['Defect_Rate'].iloc[0]:.2f}%")
-                with col2:
-                    st.metric("System Uptime", f"{subdiv_data['System_Uptime'].iloc[0]:.2f}%")
-                with col3:
-                    st.metric("Resolution Success", f"{subdiv_data['Resolution_Success'].iloc[0]:.1f}%")
-
-with tab4:
-    if not employee_filtered.empty:
-        st.markdown("**Employee Metrics (CHAPTER):**")
-        
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Engagement", f"{employee_filtered['Engagement_Score'].iloc[0]:.1f}/10")
-        with col2:
-            st.metric("Attrition Rate", f"{employee_filtered['Attrition_Rate'].iloc[0]:.1f}%")
-        with col3:
-            st.metric("Training Hours", f"{employee_filtered['Training_Hours'].iloc[0]:.0f}")
-        with col4:
-            st.metric("Overtime/FTE", f"{employee_filtered['Overtime_per_FTE'].iloc[0]:.1f}h")
+# Popup/Modal for KPI details
+if st.session_state.show_popup and st.session_state.selected_kpi:
+    st.markdown("---")
+    st.markdown(f"### 📈 Detailed Analysis: {st.session_state.selected_kpi}")
+    
+    # Subdivision selection
+    if len(st.session_state.available_subdivisions) > 1:
+        selected_subdivision = st.selectbox(
+            "Select Subdivision:",
+            st.session_state.available_subdivisions,
+            key="subdivision_select"
+        )
+    else:
+        selected_subdivision = st.session_state.available_subdivisions[0]
+        st.info(f"Subdivision: {selected_subdivision}")
+    
+    # Display chart
+    try:
+        chart = create_chart_for_kpi(
+            st.session_state.selected_kpi, 
+            selected_subdivision, 
+            data, 
+            selected_bu, 
+            selected_month
+        )
+        st.plotly_chart(chart, use_container_width=True)
+    except Exception as e:
+        st.error(f"Error creating chart: {str(e)}")
+        st.info("Sample chart data is not available for this combination.")
+    
+    # Close button
+    if st.button("❌ Close Analysis", key="close_popup"):
+        st.session_state.show_popup = False
+        st.session_state.selected_kpi = None
+        st.rerun()
 
 # Footer
 st.markdown("---")
